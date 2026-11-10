@@ -1,0 +1,178 @@
+/* Landing page. Shared tokens only; the one new thing is a hero wash. */
+
+.landing {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 72px 22px 96px;
+  display: flex;
+  flex-direction: column;
+  gap: 84px;
+}
+
+/* ---- hero ------------------------------------------------------------- */
+
+.hero {
+  position: relative;
+  max-width: 780px;
+  padding-top: 8px;
+}
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: -120px -40vw -60px -12vw;
+  background:
+    radial-gradient(52% 60% at 22% 18%, rgba(110, 231, 183, 0.11), transparent 70%),
+    radial-gradient(46% 52% at 78% 4%, rgba(59, 130, 246, 0.1), transparent 72%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.hero h1 {
+  margin: 10px 0 18px;
+  font-size: clamp(2.6rem, 6.4vw, 4.7rem);
+  letter-spacing: -0.035em;
+  line-height: 1.02;
+}
+
+.lede {
+  max-width: 620px;
+  font-size: 1.06rem;
+  color: #b7c2cf;
+  line-height: 1.62;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 26px 0 20px;
+}
+
+.btn-primary.big,
+.btn.ghost {
+  display: inline-flex;
+  align-items: center;
+  padding: 12px 22px;
+  border-radius: var(--radius-sm);
+  font-size: 0.94rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+  text-decoration: none;
+}
+.btn-primary.big:hover { text-decoration: none; }
+
+.btn.ghost {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--text);
+  font-weight: 500;
+}
+.btn.ghost:hover { border-color: var(--accent); text-decoration: none; }
+
+.engine-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  font-size: 0.78rem;
+  font-family: var(--mono);
+  color: var(--muted);
+}
+.engine-state i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+.engine-state.up i { background: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+.engine-state.down i { background: #c9b458; }
+
+/* ---- sections --------------------------------------------------------- */
+
+.section-head { margin-bottom: 22px; }
+.section-head h2 { max-width: 640px; margin-bottom: 0; }
+
+.systems .section-head h2,
+.how .section-head h2,
+.limits .section-head h2 { font-size: clamp(1.35rem, 2.6vw, 1.85rem); }
+
+.system-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+}
+
+.system-card {
+  padding: 16px 16px 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top-width: 2px;
+  border-radius: var(--radius);
+}
+.system-card h3 { margin: 6px 0 6px; font-size: 0.98rem; }
+.system-card p { margin: 0; line-height: 1.5; }
+
+.system-index {
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.steps {
+  list-style: none;
+  counter-reset: step;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+.steps li {
+  counter-increment: step;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.steps li::before {
+  content: counter(step, decimal-leading-zero);
+  display: block;
+  margin-bottom: 8px;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--accent);
+}
+.steps strong { display: block; margin-bottom: 5px; font-size: 0.93rem; }
+.steps p { margin: 0; line-height: 1.55; }
+
+.limit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 12px;
+}
+.limit-grid p {
+  margin: 0;
+  padding: 14px 15px;
+  background: rgba(201, 180, 88, 0.055);
+  border: 1px solid rgba(201, 180, 88, 0.22);
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: #c8cfd8;
+}
+.limit-grid strong { color: var(--text); display: block; margin-bottom: 3px; font-weight: 600; }
+
+.cta {
+  padding: 34px 30px;
+  background: linear-gradient(180deg, #16202b, #111820);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  text-align: center;
+}
+.cta h2 { margin-bottom: 6px; }
+.cta p { margin-bottom: 18px; }
+
+@media (max-width: 640px) {
+  .landing { padding-top: 44px; gap: 60px; }
+}

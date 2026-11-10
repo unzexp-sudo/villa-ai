@@ -41,7 +41,7 @@ from app.contract import (
 from .clash import detect_clashes
 from .merge import element_count, merge_layers
 from .performance import run_performance_loop
-from .resolver import resolve_clashes
+from .resolver import refresh_distances, resolve_clashes
 
 # Keep each agent's exploration bounded so the <10 s / max_run_seconds budget
 # is honoured. The four pinned RunLimits (resolver/performance/run/clearance)
@@ -305,6 +305,10 @@ def execute_run(run: RunResult, *, emitter=None, store=None) -> RunResult:
             merged, clashes_before, model, emitter=bus, limits=limits,
             run_id=run.run_id,
         )
+        # The resolver returns the BEFORE records with resolved/fix set; their
+        # distance_mm still describes the old geometry. Re-measure against the
+        # resolved layers so the UI cannot show "unresolved" for a fixed clash.
+        clashes_after = refresh_distances(clashes_after, resolved_layers)
         remaining = sum(1 for c in clashes_after if not c.resolved)
         resolved_n = len(clashes_after) - remaining
         emit("merge.done", "orchestrator",
@@ -344,7 +348,7 @@ def execute_run(run: RunResult, *, emitter=None, store=None) -> RunResult:
         run.metrics = {
             "duration_seconds": round(duration, 4),
             "layouts_tested": round(layouts_tested, 4),
-            "best_score": round(best_score_agg, 4),
+            "best_score": best_score_agg,  # exact sum of the real per-layer scores
             "clashes_before": float(real_total),
             "clashes_after": float(remaining),
             "checks_passed": float(code.passed),

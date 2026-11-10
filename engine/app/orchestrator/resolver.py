@@ -24,8 +24,12 @@ from app.contract import (
     SystemKind,
 )
 
-from .clash import _aabb, detect_clashes
+from .clash import _aabb, _box_gap_m, detect_clashes
 from .merge import all_elements
+
+# Cross-system clearance (contract §1). A pair closer than this is still a
+# clash; a pair further apart is resolved whatever the record said before.
+INTRA_OR_CROSS_MM = 100.0
 
 
 class _FallbackLimits:
@@ -265,4 +269,42 @@ def resolve_clashes(layers, clashes: list[Clash], model,
     return work, after
 
 
-__all__ = ["resolve_clashes", "MOVE_PLAN"]
+def refresh_distances(clashes: list[Clash],
+                      layers: dict[SystemKind, Layer]) -> list[Clash]:
+    """Re-measure every clash against the RESOLVED layers.
+
+    ``resolve_clashes`` returns the original clash records with ``resolved`` /
+    ``fix`` set, but their ``distance_mm`` still describes the BEFORE geometry.
+    Rendering that as "7 clashes, 25 mm apart" is a lie about the fixed state:
+    30 clashes resolved with their distances untouched reads as 39 unresolved
+    problems in the UI. Recomputing from the post-resolve layers is the only
+    reading that is true to what the viewer is drawing.
+
+    Elements that no longer exist (a re-route replaced a segment) keep their
+    recorded distance and are reported as ``resolved``.
+    """
+    index: dict[str, Any] = {}
+    for layer in layers.values():
+        for el in (*layer.segments, *layer.devices):
+            index[str(el.id)] = el
+
+    out: list[Clash] = []
+    for c in clashes:
+        ea, eb = index.get(str(c.a)), index.get(str(c.b))
+        if ea is None or eb is None:
+            out.append(c.model_copy(update={"resolved": True,
+                                            "fix": c.fix or "re-routed"}))
+            continue
+        gap_mm = _box_gap_m(_aabb(ea), _aabb(eb)) * 1000.0
+        still_clashing = gap_mm < INTRA_OR_CROSS_MM
+        if not still_clashing and not c.resolved:
+            # Geometry moved apart by another fix; record it honestly.
+            out.append(c.model_copy(update={"resolved": True,
+                                            "fix": c.fix or "cleared by an earlier fix",
+                                            "distance_mm": round(gap_mm, 2)}))
+        else:
+            out.append(c.model_copy(update={"distance_mm": round(gap_mm, 2)}))
+    return out
+
+
+__all__ = ["resolve_clashes", "refresh_distances", "MOVE_PLAN"]

@@ -12,6 +12,10 @@ data/events/
 data/leads/
 data/models/
 data/runs/
+data/preview/
+# The engine's own default DATA_DIR resolves to <repo>/engine/data when it
+# runs from the checkout, so the runtime state lands there, not at the root.
+engine/data/
 web/node_modules/
 web/dist/
 web/.vite/

@@ -14,7 +14,9 @@
   --water: #3b82f6;
   --air: #22d3ee;
   --power: #eab308;
-  --fire: #ef4444;
+  /* Magenta, not red: red means a clash or a failure everywhere in this app. */
+  --fire: #e6379c;
+  --clash: #ff3b30;
 
   --radius: 10px;
   --radius-sm: 6px;
