@@ -18,7 +18,7 @@ import {
   type SystemKind,
 } from "../contract";
 import { level0 } from "../contract";
-import { api } from "../lib/api";
+import { api, lead } from "../lib/api";
 import { streamRun, type StreamHandle } from "../lib/sse";
 import { PlanCanvas } from "./PlanCanvas";
 import { AgentPanel } from "./AgentPanel";
@@ -26,6 +26,7 @@ import { Coordinator } from "./Coordinator";
 import { Viewer3D } from "./Viewer3D";
 import { GapCards, currentDragId } from "./GapCards";
 import { Results } from "./Results";
+import { LeadForm } from "./LeadForm";
 import "./studio.css";
 
 type Stage = "pick" | "confirm" | "running" | "result";
@@ -57,6 +58,7 @@ export default function Studio() {
   const [busy, setBusy] = useState(false);
   const [clashCount, setClashCount] = useState<{ before: number; now: number } | null>(null);
   const [engineUp, setEngineUp] = useState<boolean | null>(null);
+  const [hasToken, setHasToken] = useState<boolean>(!!lead.getToken());
   const streamRef = useRef<StreamHandle | null>(null);
 
   useEffect(() => {
@@ -226,12 +228,18 @@ export default function Studio() {
 
       {stage === "pick" && (
         <section className="pick">
+          {!hasToken && (
+            <div className="lead-gate card">
+              <LeadForm onDone={() => setHasToken(true)} />
+            </div>
+          )}
           <header>
             <p className="eyebrow">Step 1 · choose a plan</p>
             <h1>Design all MEP for one plan. Five agents, one system each.</h1>
             <p className="muted">
-              Pick a sample to watch a real run. DXF upload works today; PDF and photo
-              plans need the vision intake, which is not wired up yet.
+              Pick a sample to watch a real run. DXF upload gives exact geometry;
+              PDF and image plans are vectorised or edge-detected — scale must be
+              calibrated before design runs.
             </p>
           </header>
           <div className="sample-row">

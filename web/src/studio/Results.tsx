@@ -198,7 +198,7 @@ export function Results({ run, model, onAgain }: Props) {
                   </p>
                 </div>
                 <div className="code-bars">
-                  <Bar n={code.passed} of={code.total} color="#4ade80" />
+                  <Bar n={code.passed} of={code.total} color="#2d8659" />
                   <Bar n={code.failed} of={code.total} color={CLASH_COLOR} />
                 </div>
               </header>

@@ -103,13 +103,13 @@ def test_apply_item_updates_the_stored_model(client):
     assert any(a["source"] == "skip" for a in assumptions)
 
 
-def test_upload_refuses_pdf_with_a_422_and_a_reason(client):
+def test_upload_refuses_garbage_pdf_with_a_422(client):
+    """A PDF with no parseable content must be refused, not guessed."""
     sample = client.get("/api/samples/villa_120").json()
     mid = client.post("/api/models", json=sample).json()["model_id"]
     res = client.post(f"/api/models/{mid}/upload",
-                      files={"file": ("plan.pdf", b"%PDF-1.7 fake", "application/pdf")})
+                      files={"file": ("plan.pdf", b"%PDF-1.7 fake garbage", "application/pdf")})
     assert res.status_code == 422
-    assert "DXF" in res.json()["detail"]
 
 
 def test_upload_accepts_a_real_dxf(client):
@@ -223,8 +223,9 @@ def test_exports_answer_with_the_right_content(client, model_id):
     assert json.loads(gltf.content)["asset"]["version"] == "2.0"
 
     ifc = client.get(f"/api/runs/{run_id}/export.ifc")
-    assert ifc.status_code == 501
-    assert "ifc" in ifc.json()["detail"].lower()
+    assert ifc.status_code == 200
+    assert ifc.content.startswith(b"ISO-10303-21;")
+    assert b"IFC4" in ifc.content
 
 
 def test_unknown_run_export_is_404(client):

@@ -31,10 +31,12 @@ CheckFn = Callable[[BuildingModel, dict[SystemKind, Layer]], RuleOutcome]
 class Rule:
     """One checkable requirement.
 
-    ``verified`` is False everywhere: the plan admits the exact SNI / PUIL
-    numbers were not confirmed with a local engineer. A rule with
-    ``verified=False`` may still pass, but its reference is labelled unverified
-    in the report.
+    ``verified`` indicates that the standard reference (e.g. SNI 03-6481-2000)
+    has been confirmed via web search. It does NOT mean the specific threshold
+    values in the rule have been confirmed against the actual clauses — a local
+    engineer must still validate the numbers. A rule with ``verified=False``
+    (e.g. the VN/TH stub packs) may still pass, but its reference is labelled
+    unverified in the report.
     """
 
     id: str

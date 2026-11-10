@@ -1,4 +1,4 @@
-"""Intake: read a damaged or partial plan, and find what is missing from it.
+"""Intake: read a floor plan, and find what is missing from it.
 
 Two separate jobs, deliberately kept apart:
 
@@ -11,11 +11,10 @@ Two separate jobs, deliberately kept apart:
   building type and return ``MissingItem`` cards. Rules first, LLM second; in
   v1 it is rules only, which is the honest floor.
 
-DXF is parsed for real (``ezdxf``): LINE, LWPOLYLINE and INSERT names give walls
-and room labels. PDF and raster plans cannot be read reliably without a vision
-model, so ``parse_upload`` refuses them with an explicit, actionable error
-rather than emitting a plausible-looking empty plan. That refusal is the honest
-behaviour, and it is what the plan itself warns about in its risk table.
+DXF is parsed for exact geometry (``ezdxf``). PDF is parsed by extracting
+vector operations from the content stream, or by rasterising and edge-detecting
+if the PDF is scanned. Raster images (PNG/JPG) use the same edge-detection path.
+No vision model is involved — real line geometry is extracted, never guessed.
 """
 
 from __future__ import annotations
@@ -25,11 +24,13 @@ from app.intake.parse import (
     ParseError,
     UnsupportedFormat,
     parse_dxf,
+    parse_image,
+    parse_pdf,
     parse_upload,
 )
 from app.intake.quickdraw import blank_model
 
 __all__ = [
-    "ParseError", "UnsupportedFormat", "parse_dxf", "parse_upload",
-    "audit", "apply_item", "blank_model",
+    "ParseError", "UnsupportedFormat", "parse_dxf", "parse_image", "parse_pdf",
+    "parse_upload", "audit", "apply_item", "blank_model",
 ]

@@ -169,15 +169,35 @@ def test_gltf_survives_an_empty_run(empty_run: RunResult):
     assert doc["asset"]["version"] == "2.0"
 
 
-# ---- IFC: an honest refusal ----------------------------------------------
+# ---- IFC: a minimal real file --------------------------------------------
 
-def test_ifc_refuses_instead_of_faking_a_file(villa_run: RunResult):
-    with pytest.raises(NotImplementedError) as exc:
-        to_ifc(villa_run)
-    message = str(exc.value).lower()
-    assert "ifc" in message
-    # The message must tell the user what to do instead.
-    assert "dxf" in message or "gltf" in message
+def test_ifc_produces_a_valid_spf_file(villa_run: RunResult):
+    blob = to_ifc(villa_run)
+    assert isinstance(blob, bytes)
+    text = blob.decode("utf-8", "replace")
+    assert text.startswith("ISO-10303-21;"), "IFC must be a STEP physical file"
+    assert "FILE_SCHEMA(('IFC4'))" in text
+    assert "ENDSEC;" in text
+    assert "END-ISO-10303-21;" in text
+    # Must contain at least one flow segment if the run has layers
+    if villa_run.layers:
+        assert "IFCFLOWSEGMENT" in text, "a run with layers must export flow segments"
+
+
+def test_ifc_has_project_hierarchy(villa_run: RunResult):
+    text = to_ifc(villa_run).decode("utf-8", "replace")
+    assert "IFCPROJECT" in text
+    assert "IFCSITE" in text
+    assert "IFCBUILDING" in text
+    assert "IFCBUILDINGSTOREY" in text
+
+
+def test_ifc_survives_an_empty_run(empty_run: RunResult):
+    text = to_ifc(empty_run).decode("utf-8", "replace")
+    assert text.startswith("ISO-10303-21;")
+    assert "END-ISO-10303-21;" in text
+    # An empty run still has the project hierarchy
+    assert "IFCPROJECT" in text
 
 
 # ---- helpers --------------------------------------------------------------

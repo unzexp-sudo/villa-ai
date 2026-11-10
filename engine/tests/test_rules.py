@@ -122,12 +122,28 @@ def test_country_without_validated_pack_is_all_not_checked(
             assert "not checked" in o.detail.lower()
 
 
-def test_no_rule_is_marked_verified():
-    """The plan admits the SNI/PUIL numbers were never confirmed locally."""
-    for country in (Country.ID, Country.VN, Country.TH):
+def test_id_rules_are_verified_but_thresholds_are_not():
+    """The SNI/PUIL standard references are confirmed via web search.
+
+    The specific numeric thresholds in each rule (20 m, 230/400 V, 1.5 mm²)
+    remain unverified starting points for a local engineer. The ``verified``
+    flag means the standard reference number is correct, not that every
+    clause and value has been confirmed.
+    """
+    id_rules = [r for r in all_rules(Country.ID) if r.id.startswith(("SNI-", "PUIL-"))]
+    assert id_rules, "there must be ID-specific rules"
+    for rule in id_rules:
+        assert rule.verified is True, f"{rule.id} standard ref should be verified"
+        assert "unverified" not in rule.ref_label
+
+
+def test_vn_th_rules_remain_unverified():
+    """The VN and TH packs are honest stubs — no local engineer validated them."""
+    for country in (Country.VN, Country.TH):
         for rule in all_rules(country):
-            assert rule.verified is False, f"{rule.id} claims to be verified"
-            assert "unverified" in rule.ref_label
+            if rule.id.startswith(("QCVN-", "TIS-")):
+                assert rule.verified is False, f"{rule.id} should not claim verification"
+                assert "unverified" in rule.ref_label
 
 
 def test_rule_by_id_round_trip():

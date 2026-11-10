@@ -1,14 +1,16 @@
-/* Shared dark theme tokens. Orchestrator-owned — do not edit from feature modules. */
+/* Shared theme tokens — warm Bali-outdoor palette.
+   Orchestrator-owned — do not edit from feature modules.
+   Indoors are cream by default; the app chrome is warm sand/sky. */
 :root {
-  --bg: #0b0f14;
-  --surface: #141a22;
-  --surface-2: #1a222d;
-  --border: #232c38;
-  --text: #e6edf3;
-  --muted: #8b98a8;
-  --accent: #6ee7b7;
-  --accent-dim: rgba(110, 231, 183, 0.12);
-  --danger: #ff2d55;
+  --bg: #f5f1ea;
+  --surface: #ffffff;
+  --surface-2: #faf6ef;
+  --border: #e2d9cb;
+  --text: #2d2620;
+  --muted: #8a7f6f;
+  --accent: #2d8659;
+  --accent-dim: rgba(45, 134, 89, 0.12);
+  --danger: #c0392b;
 
   --drainage: #f97316;
   --water: #3b82f6;
@@ -24,7 +26,7 @@
     "Helvetica Neue", Arial, sans-serif;
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 * { box-sizing: border-box; }
@@ -65,11 +67,11 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .btn-primary {
   background: var(--accent);
-  color: #07130e;
+  color: #fff;
   border-color: var(--accent);
   font-weight: 650;
 }
-.btn-primary:hover:not(:disabled) { background: #8df0c9; border-color: #8df0c9; }
+.btn-primary:hover:not(:disabled) { background: #36a06b; border-color: #36a06b; }
 
 input, select, textarea {
   background: var(--bg);
@@ -118,7 +120,7 @@ input:focus, select:focus, textarea:focus {
   justify-content: space-between;
   padding: 0 22px;
   border-bottom: 1px solid var(--border);
-  background: rgba(11, 15, 20, 0.92);
+  background: rgba(245, 241, 234, 0.92);
   position: sticky;
   top: 0;
   z-index: 50;

@@ -272,7 +272,9 @@ def export_ifc(run_id: str):
     from app.exports.ifc import to_ifc
 
     try:
-        return Response(content=to_ifc(_run_or_404(run_id)), media_type="application/ifc")
+        data = to_ifc(_run_or_404(run_id))
+        return Response(content=data, media_type="application/ifc",
+                        headers={"Content-Disposition": f'attachment; filename="{run_id}.ifc"'})
     except NotImplementedError as exc:
         return JSONResponse(status_code=501,
                             content={"code": "NOT_IMPLEMENTED", "detail": str(exc)})

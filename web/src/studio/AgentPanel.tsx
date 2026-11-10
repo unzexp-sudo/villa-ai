@@ -81,7 +81,7 @@ export function AgentPanel({ system, model, state, color, codeRef, band }: Props
         <span className="agent-ref mono">{codeRef}</span>
         <span
           className="agent-phase"
-          style={{ color: failed ? "#ff3b30" : done ? "#4ade80" : color }}
+          style={{ color: failed ? "#c0392b" : done ? "#2d8659" : color }}
         >
           {PHASE_LABEL[state.phase] ?? state.phase}
         </span>

@@ -21,10 +21,10 @@ not evaluate**.
 | Code rule engine (42 rules: IPC baseline + SNI/PUIL Indonesia + honest VN/TH stubs) | Real |
 | Live run stream over SSE, terminal-event protocol, replay by `Last-Event-ID` | Real |
 | DXF intake | Real (`ezdxf`) |
-| PDF / image / DWG intake | **Refused with a reason**, on purpose |
+| PDF / image intake | Real — vector extraction + edge detection, no vision model |
+| DWG intake | **Refused with a reason** (convert to DXF) |
 | Gap auditor (drag / suggest / skip) + assumption log | Real |
-| Exports: PDF report, DXF, glTF | Real files |
-| IFC export | **501** — not implemented, and it says so |
+| Exports: PDF report, DXF, glTF, IFC | Real files (IFC is a minimal IFC4 transport) |
 | 3D interior walkthrough (`/interior`) | Real, deterministic |
 | LLM planner | Not wired; the deterministic planner runs instead |
 | Persistence | JSON files on disk (no Postgres/Redis needed) |
@@ -119,13 +119,14 @@ native `error` as a reconnect rather than an end. A stream that ends without a
 terminal event is a failure the user must see.
 
 **8. Unsupported input is refused with a next step.**
-PDF and image plans need a vision model this build does not have. Rather than
-emit a plausible-looking guess, the parser refuses and says what to do
-instead. A plan we invented would be useless to correct.
+DWG needs a conversion service. PDF and raster images are vectorised or
+edge-detected — real line geometry, not a vision-model guess. Scale is never
+inferred; the user calibrates two points before design runs.
 
-**9. Exports are real files or an honest refusal.**
-PDF, DXF and glTF are generated from the actual run geometry. IFC raises
-`NotImplementedError`, which the API surfaces as a `501` with an explanation.
+**9. Exports are real files.**
+PDF, DXF, glTF and IFC are all generated from the actual run geometry. IFC is a
+minimal IFC4 SPF transport — it opens in any viewer but property sets are
+minimal. A BIM manager must enrich it before coordination.
 
 **10. Deleting a model deletes its runs and events.**
 The privacy promise is enforced server-side, in the store, by cascade.
@@ -148,8 +149,8 @@ engine/
     agents/                the five specialists
     orchestrator/          merge, clash, resolver, performance, run
     rules/                 rule engine + baseline/ID/VN/TH packs
-    exports/               PDF, DXF, glTF, IFC (501)
-    intake/                DXF parser, gap auditor, quick draw
+    exports/               PDF, DXF, glTF, IFC (minimal IFC4 SPF)
+    intake/                DXF parser, PDF/image vectoriser, gap auditor
     api/                   routes, SSE, lead gate
     interior/              additive 3D model + walkthrough
   fixtures/                hand-authored sample plans
@@ -174,7 +175,7 @@ web/src/
 | `POST` | `/api/models` | create a model |
 | `GET`/`PATCH`/`DELETE` | `/api/models/{id}` | read, edit, delete (cascades) |
 | `POST` | `/api/models/{id}/scale` | calibrate two points |
-| `POST` | `/api/models/{id}/upload` | DXF intake |
+| `POST` | `/api/models/{id}/upload` | DXF / PDF / image intake |
 | `GET` | `/api/models/{id}/gaps` | missing-item cards |
 | `POST` | `/api/models/{id}/items` | place / suggest / skip an item |
 | `POST` | `/api/runs` | start a run (lead-gated when enabled) |
@@ -215,8 +216,11 @@ no CORS is needed in production. `railway.json` is configured for it.
 - **The planner is deterministic, not an LLM.** It searches real layout
   variants and scores them, but it does not consult a language model. The
   strategy interface (`app/planner/base.py`) is where a planner would plug in.
-- **PDF/image intake is refused.** DXF only, plus Quick draw.
-- **IFC export is a 501.** Everything else writes real files.
+- **PDF/image intake is vectorisation, not vision.** Vector PDFs are parsed
+  from their content stream; raster images use edge detection. No vision model
+  is involved. Scale must be calibrated before design runs.
+- **IFC is a minimal transport.** The IFC4 SPF file opens in any viewer but
+  has minimal property sets. It is not a coordination-ready BIM model.
 - **The rule packs are unverified.** The SNI/PUIL references are starting
   points, not confirmed numbers. The VN and TH packs deliberately return
   `not_checked` because no local engineer has validated them.

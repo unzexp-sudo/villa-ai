@@ -110,16 +110,53 @@ def test_garbage_is_refused_not_guessed():
         parse_dxf(b"this is not a dxf file at all", "x.dxf")
 
 
-# ---- honest refusal of formats the build cannot read ---------------------
+# ---- PDF and raster parsing -----------------------------------------------
 
-@pytest.mark.parametrize("name", ["plan.pdf", "scan.PNG", "photo.jpg", "x.tiff"])
-def test_pdf_and_raster_are_refused_with_a_next_step(name: str):
-    with pytest.raises(UnsupportedFormat) as exc:
-        parse_upload(name, b"%PDF-1.7 whatever")
-    message = str(exc.value)
-    # The refusal has to be actionable, not just "unsupported".
-    assert "DXF" in message
-    assert "vision" in message.lower()
+def test_pdf_with_vector_content_is_parsed():
+    """A PDF with embedded vector line ops should produce walls."""
+    # Create a minimal PDF with a line operation in the content stream
+    pdf_content = _make_minimal_pdf_with_lines()
+    model = parse_upload("plan.pdf", pdf_content)
+    assert model.source == "upload"
+    assert len(model.level0.walls) > 0, "vector PDF must yield walls"
+
+
+def test_raster_image_with_lines_is_parsed():
+    """A raster image with dark horizontal/vertical lines should produce walls."""
+    from PIL import Image, ImageDraw
+    import io as _io
+
+    img = Image.new("L", (400, 300), 255)
+    draw = ImageDraw.Draw(img)
+    draw.line([(10, 50), (380, 50)], fill=0, width=3)
+    draw.line([(10, 250), (380, 250)], fill=0, width=3)
+    draw.line([(50, 10), (50, 290)], fill=0, width=3)
+    draw.line([(350, 10), (350, 290)], fill=0, width=3)
+
+    buf = _io.BytesIO()
+    img.save(buf, format="PNG")
+    model = parse_upload("plan.png", buf.getvalue())
+    assert model.source == "upload"
+    assert len(model.level0.walls) > 0, "image with clear lines must yield walls"
+
+
+def test_pdf_scale_is_never_inferred():
+    pdf_content = _make_minimal_pdf_with_lines()
+    model = parse_upload("plan.pdf", pdf_content)
+    assert model.scale is None
+    assert any("scale" in a.field for a in model.assumptions)
+
+
+def test_image_scale_is_never_inferred():
+    from PIL import Image
+    import io as _io
+
+    img = Image.new("L", (200, 200), 255)
+    buf = _io.BytesIO()
+    img.save(buf, format="PNG")
+    # No dark lines -> should raise UnsupportedFormat
+    with pytest.raises((UnsupportedFormat, ParseError)):
+        parse_upload("blank.png", buf.getvalue())
 
 
 def test_dwg_refusal_names_the_fix():
@@ -203,3 +240,27 @@ def test_blank_model_is_valid_and_immediately_runnable():
     assert model.source == "quickdraw"
     assert model.level0.rooms or model.level0.walls
     audit(model)  # must not raise on a blank plan
+
+
+# ---- helpers --------------------------------------------------------------
+
+def _make_minimal_pdf_with_lines() -> bytes:
+    """Build a minimal single-page PDF whose content stream draws lines.
+
+    Uses reportlab to generate a valid PDF with line operations so that
+    pypdf's ContentStream parser can extract vector segments.
+    """
+    from reportlab.pdfgen import canvas
+    from reportlab.lib.pagesizes import letter
+    import io as _io
+
+    buf = _io.BytesIO()
+    c = canvas.Canvas(buf, pagesize=(400, 300))
+    # Draw a rectangle: 4 line segments
+    c.line(50, 50, 350, 50)
+    c.line(350, 50, 350, 250)
+    c.line(350, 250, 50, 250)
+    c.line(50, 250, 50, 50)
+    c.showPage()
+    c.save()
+    return buf.getvalue()

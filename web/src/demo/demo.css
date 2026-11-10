@@ -1,0 +1,141 @@
+/* DemoRun — scripted landing animation. NOT a real SSE run. */
+
+.demo-run {
+  margin: 28px 0 0;
+  padding: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.demo-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+@media (max-width: 640px) {
+  .demo-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.demo-agent {
+  padding: 10px 8px;
+  border: 1px solid var(--border);
+  border-top-width: 2px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: border-color 300ms ease;
+}
+
+.demo-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  opacity: 0.3;
+  transition: opacity 300ms ease;
+}
+
+.demo-queued .demo-dot { opacity: 0.2; }
+.demo-exploring .demo-dot,
+.demo-testing .demo-dot {
+  opacity: 1;
+  animation: demo-pulse 0.8s ease-in-out infinite;
+}
+.demo-committing .demo-dot { opacity: 1; }
+.demo-done .demo-dot {
+  opacity: 1;
+  box-shadow: 0 0 0 3px rgba(110, 231, 183, 0.15);
+}
+
+@keyframes demo-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.4); }
+}
+
+.demo-name {
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.demo-bar {
+  height: 3px;
+  background: var(--bg);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.demo-bar-fill {
+  height: 100%;
+  transition: width 400ms ease;
+  border-radius: 2px;
+}
+
+.demo-count {
+  font-size: 0.68rem;
+  color: var(--muted);
+  font-family: var(--mono);
+}
+
+.demo-coord {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+}
+
+.demo-coord-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.demo-coord-val {
+  font-size: 0.85rem;
+  font-family: var(--mono);
+  color: var(--text);
+}
+
+.demo-clash {
+  margin-left: auto;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.demo-clash.on {
+  color: var(--clash);
+  font-weight: 600;
+}
+
+.demo-result {
+  display: flex;
+  gap: 16px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: rgba(110, 231, 183, 0.06);
+  border: 1px solid rgba(110, 231, 183, 0.15);
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  animation: demo-fade 400ms ease;
+}
+
+@keyframes demo-fade {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.demo-note {
+  margin: 10px 0 0;
+  text-align: center;
+}

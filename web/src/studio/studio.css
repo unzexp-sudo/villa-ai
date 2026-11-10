@@ -7,6 +7,80 @@
  * decorative in this file uses red.
  */
 
+/* ---- Lead gate ---------------------------------------------------------- */
+
+.lead-gate {
+  max-width: 480px;
+  margin-bottom: 28px;
+}
+
+.lead-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.lead-form .eyebrow {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--accent);
+  margin: 0;
+}
+
+.lead-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lead-field > span {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.lead-row {
+  display: flex;
+  gap: 10px;
+}
+
+.lead-row .lead-field { flex: 1; }
+
+.lead-consent {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.lead-consent input[type="checkbox"] {
+  width: auto;
+  margin-top: 3px;
+}
+
+.lead-consent span { line-height: 1.5; }
+
+.lead-error {
+  color: var(--danger);
+  font-size: 0.85rem;
+  margin: 0;
+  padding: 8px 10px;
+  background: rgba(255, 45, 85, 0.08);
+  border-radius: var(--radius-sm);
+}
+
+.lead-done {
+  padding: 16px;
+  text-align: center;
+}
+
+.lead-done p {
+  color: var(--accent);
+  margin: 0;
+}
+
+/* ---- Studio layout ------------------------------------------------------ */
+
 .studio {
   max-width: 1380px;
   margin: 0 auto;
@@ -27,10 +101,10 @@
   flex-wrap: wrap;
   margin-bottom: 18px;
   padding: 11px 14px;
-  border: 1px solid #5b2424;
-  background: rgba(255, 59, 48, 0.08);
+  border: 1px solid #e8c4c0;
+  background: rgba(192, 57, 43, 0.06);
   border-radius: var(--radius-sm);
-  color: #ffb4ad;
+  color: #9c3a2e;
   font-size: 0.88rem;
 }
 
@@ -91,7 +165,7 @@
 
 .plan-canvas {
   display: block;
-  background: #0d1219;
+  background: #f0ebe2;
   border: 1px solid var(--border);
   border-radius: var(--radius);
 }
@@ -212,7 +286,7 @@
   border-radius: 999px;
   font-size: 0.66rem;
   font-weight: 650;
-  color: #07130e;
+  color: #fff;
 }
 
 .agent-foot { padding: 9px 12px 11px; }
@@ -220,8 +294,8 @@
 
 .agent-counter { color: var(--muted); font-size: 0.76rem; }
 .agent-verdict { margin-top: 3px !important; font-size: 0.78rem; }
-.agent-verdict.pass { color: #4ade80; }
-.agent-verdict.fail { color: #ff3b30; }
+.agent-verdict.pass { color: #2d8659; }
+.agent-verdict.fail { color: #c0392b; }
 .agent-verdict.neutral { color: var(--muted); }
 
 .agent-bar {
@@ -244,7 +318,7 @@
   flex-direction: column;
   gap: 6px;
   padding: 13px 14px;
-  background: linear-gradient(180deg, #171f29, #121820);
+  background: linear-gradient(180deg, #faf6ef, #f5f1ea);
   border: 1px solid var(--border);
   border-radius: var(--radius);
 }
@@ -298,7 +372,7 @@
   margin: 0;
   font-size: 1.2rem;
   font-weight: 650;
-  color: #ff6b60;
+  color: #c0392b;
 }
 
 /* ---- merged views ----------------------------------------------------- */
@@ -338,7 +412,7 @@
   right: 12px;
   bottom: 12px;
   padding: 10px 12px;
-  background: rgba(20, 26, 34, 0.92);
+  background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(6px);
   min-width: 172px;
 }
@@ -360,7 +434,7 @@
   left: 12px;
   top: 12px;
   padding: 10px 13px;
-  background: rgba(20, 26, 34, 0.92);
+  background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(6px);
   min-width: 172px;
 }
@@ -378,7 +452,7 @@
   padding: 11px 14px;
   height: 132px;
   overflow-y: auto;
-  background: #0d1219;
+  background: #f0ebe2;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   font-size: 0.78rem;
@@ -471,7 +545,7 @@
 .clash-item { display: flex; gap: 6px; align-items: flex-start; }
 .clash-item .dot { width: 7px; height: 7px; border-radius: 50%; margin-top: 6px; flex: none; }
 .clash-item p { margin: 0; }
-.warn { color: #c9b458; margin: 0; }
+.warn { color: #9c8b3a; margin: 0; }
 
 .code-view { display: flex; flex-direction: column; gap: 12px; }
 .code-view h3 { margin: 0; }
@@ -491,8 +565,8 @@
 }
 .code-id { color: var(--muted); font-size: 0.72rem; }
 .code-status { font-size: 0.72rem; letter-spacing: 0.04em; }
-.code-row.ok .code-status { color: #4ade80; }
-.code-row.bad .code-status { color: #ff3b30; }
+.code-row.ok .code-status { color: #2d8659; }
+.code-row.bad .code-status { color: #c0392b; }
 .code-row.nc .code-status { color: var(--muted); }
 .code-detail { color: var(--text); }
 

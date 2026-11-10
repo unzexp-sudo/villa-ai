@@ -21,8 +21,8 @@
   position: absolute;
   inset: -120px -40vw -60px -12vw;
   background:
-    radial-gradient(52% 60% at 22% 18%, rgba(110, 231, 183, 0.11), transparent 70%),
-    radial-gradient(46% 52% at 78% 4%, rgba(59, 130, 246, 0.1), transparent 72%);
+    radial-gradient(52% 60% at 22% 18%, rgba(45, 134, 89, 0.12), transparent 70%),
+    radial-gradient(46% 52% at 78% 4%, rgba(91, 168, 216, 0.1), transparent 72%);
   pointer-events: none;
   z-index: -1;
 }
@@ -37,7 +37,7 @@
 .lede {
   max-width: 620px;
   font-size: 1.06rem;
-  color: #b7c2cf;
+  color: #6a604f;
   line-height: 1.62;
 }
 
@@ -85,7 +85,7 @@
   background: var(--muted);
 }
 .engine-state.up i { background: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
-.engine-state.down i { background: #c9b458; }
+.engine-state.down i { background: #9c8b3a; }
 
 /* ---- sections --------------------------------------------------------- */
 
@@ -154,18 +154,18 @@
 .limit-grid p {
   margin: 0;
   padding: 14px 15px;
-  background: rgba(201, 180, 88, 0.055);
-  border: 1px solid rgba(201, 180, 88, 0.22);
+  background: rgba(156, 139, 58, 0.06);
+  border: 1px solid rgba(156, 139, 58, 0.25);
   border-radius: var(--radius);
   font-size: 0.85rem;
   line-height: 1.55;
-  color: #c8cfd8;
+  color: #6a604f;
 }
 .limit-grid strong { color: var(--text); display: block; margin-bottom: 3px; font-weight: 600; }
 
 .cta {
   padding: 34px 30px;
-  background: linear-gradient(180deg, #16202b, #111820);
+  background: linear-gradient(180deg, #faf6ef, #f5f1ea);
   border: 1px solid var(--border);
   border-radius: 14px;
   text-align: center;

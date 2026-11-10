@@ -106,7 +106,7 @@ export function PlanCanvas({
             <polygon
               key={r.id}
               points={pts}
-              fill={r.wet ? "rgba(34,211,238,0.07)" : "rgba(255,255,255,0.025)"}
+              fill={r.wet ? "rgba(34,211,238,0.12)" : "rgba(210,195,165,0.08)"}
               stroke="none"
             />
           );
@@ -119,7 +119,7 @@ export function PlanCanvas({
             y1={wall.start.y}
             x2={wall.end.x}
             y2={wall.end.y}
-            stroke={wall.is_exterior ? "#e8eef5" : "#8f9bab"}
+            stroke={wall.is_exterior ? "#5a4f3f" : "#a89a82"}
             strokeWidth={Math.max(wall.thickness, stroke * 1.6)}
             strokeLinecap="square"
           />
@@ -138,13 +138,13 @@ export function PlanCanvas({
             <line
               key={o.id}
               x1={a.x} y1={a.y} x2={b.x} y2={b.y}
-              stroke="#0b0f14" strokeWidth={wall.thickness * 1.15} strokeLinecap="butt"
+              stroke="#f5f1ea" strokeWidth={wall.thickness * 1.15} strokeLinecap="butt"
             />
           );
         })}
 
         {level.fixtures.map((f) => (
-          <circle key={f.id} cx={f.at.x} cy={f.at.y} r={stroke * 2.2} fill="#5b6676" />
+          <circle key={f.id} cx={f.at.x} cy={f.at.y} r={stroke * 2.2} fill="#8a7f6f" />
         ))}
 
         {level.equipment.map((e) => (
@@ -155,7 +155,7 @@ export function PlanCanvas({
             width={stroke * 6}
             height={stroke * 6}
             fill="none"
-            stroke="#c3ccd8"
+            stroke="#a89a82"
             strokeWidth={stroke}
           />
         ))}
@@ -223,7 +223,7 @@ export function PlanCanvas({
                 <text
                   x={cx}
                   y={cy}
-                  fill="#8b98a8"
+                  fill="#8a7f6f"
                   fontSize={fs}
                   textAnchor="middle"
                   dominantBaseline="middle"

@@ -37,6 +37,48 @@ export interface SampleSummary {
   slug: string;
 }
 
+// --- Lead gate ---------------------------------------------------------------
+// The server-side gate is in engine/app/api/leads.py. In dev the gate is OFF,
+// so these calls succeed and return a dev_token. In production with
+// REQUIRE_LEAD_GATE=true, the token must be present on POST /api/runs.
+
+const TOKEN_KEY = "villa-ai-session-token";
+
+export const lead = {
+  submit: (body: {
+    name: string;
+    email: string;
+    role: string;
+    company?: string;
+    country?: string;
+    project_type?: string;
+    phone?: string;
+    consent: boolean;
+  }) =>
+    req<{ lead_id: string; status: string; dev_token: string | null }>("/api/leads", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  verify: (token: string) =>
+    req<{ status: string; session_token: string; lead_id: string }>("/api/leads/verify", {
+      method: "POST",
+      body: JSON.stringify({ token }),
+    }),
+
+  saveToken: (token: string) => {
+    try { localStorage.setItem(TOKEN_KEY, token); } catch { /* private mode */ }
+  },
+
+  getToken: (): string | null => {
+    try { return localStorage.getItem(TOKEN_KEY); } catch { return null; }
+  },
+
+  clearToken: () => {
+    try { localStorage.removeItem(TOKEN_KEY); } catch { /* private mode */ }
+  },
+};
+
 export const api = {
   health: () => req<{ ok: boolean; version: string }>("/api/health"),
 
@@ -92,11 +134,16 @@ export const api = {
     return (await res.json()) as BuildingModel;
   },
 
-  startRun: (model_id: string, enabled_systems?: SystemKind[]) =>
-    req<{ run_id: string; status: string; enabled_systems: SystemKind[] }>("/api/runs", {
+  startRun: (model_id: string, enabled_systems?: SystemKind[]) => {
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    const token = lead.getToken();
+    if (token) headers["x-session-token"] = token;
+    return req<{ run_id: string; status: string; enabled_systems: SystemKind[] }>("/api/runs", {
       method: "POST",
       body: JSON.stringify({ model_id, enabled_systems }),
-    }),
+      headers,
+    });
+  },
 
   getRun: (runId: string) => req<RunResult>(`/api/runs/${runId}`),
 

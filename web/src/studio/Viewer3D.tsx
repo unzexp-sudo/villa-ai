@@ -49,12 +49,12 @@ export function Viewer3D({ model, layers, clash }: Props) {
           position: [centre.r * 0.75, centre.r * 0.85, centre.r * 0.95],
           fov: 42,
         }}
-        style={{ background: "#c9ced4" }}
+        style={{ background: "#a8c8d8" }}
         dpr={[1, 1.6]}
       >
-        <ambientLight intensity={0.85} />
-        <directionalLight position={[8, 14, 6]} intensity={0.7} />
-        <directionalLight position={[-6, 8, -8]} intensity={0.25} />
+        <ambientLight intensity={1.2} />
+        <directionalLight position={[8, 14, 6]} intensity={1.1} />
+        <directionalLight position={[-6, 8, -8]} intensity={0.4} />
 
         <group position={[-centre.x, 0, centre.y]}>
           {showShell && <Shell model={model} />}
@@ -105,7 +105,7 @@ export function Viewer3D({ model, layers, clash }: Props) {
 
       <div className="v3d-clash card">
         <p className="eyebrow">Coordinator · clash check</p>
-        <p className="v3d-clash-num" style={{ color: clash && clash.now > 0 ? CLASH_COLOR : "#4ade80" }}>
+        <p className="v3d-clash-num" style={{ color: clash && clash.now > 0 ? CLASH_COLOR : "#2d8659" }}>
           {clash ? clash.now : "—"}
         </p>
         <p className="muted small">
@@ -132,7 +132,7 @@ function Shell({ model }: { model: BuildingModel }) {
         return (
           <mesh key={r.id} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.005, 0]}>
             <shapeGeometry args={[shape]} />
-            <meshBasicMaterial color="#ffffff" transparent opacity={0.5} side={THREE.DoubleSide} />
+            <meshBasicMaterial color="#faf6ef" transparent opacity={0.7} side={THREE.DoubleSide} />
           </mesh>
         );
       })}
@@ -149,9 +149,9 @@ function Shell({ model }: { model: BuildingModel }) {
           <mesh key={w.id} position={[cx, (w.height || h) / 2, cz]} rotation={[0, angle, 0]}>
             <boxGeometry args={[len, w.height || h, w.thickness]} />
             <meshStandardMaterial
-              color="#dfe4ea"
+              color="#f0ebe2"
               transparent
-              opacity={w.is_exterior ? 0.42 : 0.26}
+              opacity={w.is_exterior ? 0.5 : 0.35}
               roughness={0.9}
               depthWrite={false}
             />

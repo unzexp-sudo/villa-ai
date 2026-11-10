@@ -40,19 +40,19 @@ const MOVE_KEYS = new Set([
   "arrowright",
 ]);
 
-const FLOOR_COLORS = ["#131a23", "#151d27", "#121820", "#161f29", "#141b25", "#171e28"];
-const EXTERIOR = "#2a3442";
-const INTERIOR = "#1a222d";
-const EXTERIOR_EDGE = "#3d4a5c";
-const INTERIOR_EDGE = "#2b3746";
-const ACCENT = "#6ee7b7"; // --accent
-const BG = "#0b0f14"; // --bg
-const BORDER = "#232c38"; // --border
+const FLOOR_COLORS = ["#d4b896", "#c9ad8a", "#d8be9c", "#ceb294", "#d2b690", "#c4a888"];
+const EXTERIOR = "#e8ddd0";
+const INTERIOR = "#f5efe5";
+const EXTERIOR_EDGE = "#c4b8a6";
+const INTERIOR_EDGE = "#d4c9b8";
+const ACCENT = "#2d8659"; // --accent
+const BG = "#a8c8d8"; // sky blue
+const BORDER = "#e2d9cb"; // --border
 
 const OPENING_TINT: Record<SceneOpening["kind"], string> = {
-  door: "#6ee7b7", // --accent
-  window: "#3b82f6", // --water
-  passage: "#8b98a8", // --muted
+  door: "#2d8659", // --accent
+  window: "#5ba8d8", // warm sky blue
+  passage: "#8a7f6f", // --muted
 };
 
 interface CameraSetup {
@@ -206,10 +206,8 @@ function WallSegmentMesh({
       <mesh geometry={box}>
         <meshStandardMaterial
           color={color}
-          emissive={color}
-          emissiveIntensity={0.14}
-          roughness={0.88}
-          metalness={0.05}
+          roughness={0.92}
+          metalness={0.02}
         />
       </mesh>
       <lineSegments geometry={edges}>
@@ -350,7 +348,7 @@ function Headlamp() {
       intensity={22}
       distance={14}
       decay={2}
-      color="#dfe9f5"
+      color="#fff8e8"
     />
   );
 }
@@ -439,8 +437,9 @@ export default function Viewer3D({ scene, mode, roomId, buildProgress }: Props) 
         style={{ width: "100%", height: "100%" }}
       >
         <color attach="background" args={[BG]} />
-        <ambientLight intensity={0.9} />
-        <directionalLight position={[8, 18, 6]} intensity={1.25} />
+        <ambientLight intensity={1.4} />
+        <directionalLight position={[8, 18, 6]} intensity={1.8} />
+        <directionalLight position={[-6, 12, -8]} intensity={0.6} />
         <SceneRig scene={scene} mode={mode} roomId={roomId} p={p} />
       </Canvas>
     </div>

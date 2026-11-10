@@ -8,6 +8,7 @@
 import { useEffect, useState } from "react";
 import { API_BASE, PRODUCT_NAME, SYSTEM_COLORS, SYSTEM_LABELS, SYSTEM_ORDER } from "../contract";
 import { api } from "../lib/api";
+import { DemoRun } from "../demo/DemoRun";
 import "./landing.css";
 
 interface Health {
@@ -59,6 +60,8 @@ export default function Landing() {
             ? `Engine online · v${health.version ?? "0.1.0"} · ${API_BASE.replace(/^https?:\/\//, "")}`
             : "Engine offline — start the API to run a design"}
         </p>
+
+        <DemoRun />
       </section>
 
       <section className="systems">
@@ -92,8 +95,9 @@ export default function Landing() {
           <li>
             <strong>Read the plan</strong>
             <p className="muted small">
-              DXF is parsed for real. A PDF or a phone photo needs the vision intake, which
-              this build does not wire up — it refuses rather than guessing walls.
+              DXF is parsed for exact geometry. PDF and raster images (PNG/JPG) are
+              vectorised from the content stream or edge-detected — no vision model,
+              real line geometry, never a guess.
             </p>
           </li>
           <li>
@@ -136,12 +140,14 @@ export default function Landing() {
             checks that cannot be evaluated say <em>not checked</em>.
           </p>
           <p>
-            <strong>Not a scan reader (yet).</strong> PDF and image plans are refused with
-            a reason instead of a plausible-looking guess.
+            <strong>Not a scan reader.</strong> PDF and image plans are vectorised
+            or edge-detected — real line geometry, but no vision model. Scale must
+            be calibrated before design runs.
           </p>
           <p>
             <strong>Not every export.</strong> PDF, DXF and glTF are real files. IFC
-            answers 501 until a real exporter lands.
+            is a minimal IFC4 transport that opens in any viewer — a BIM manager
+            must enrich it before coordination.
           </p>
         </div>
       </section>

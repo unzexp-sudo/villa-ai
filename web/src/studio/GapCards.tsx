@@ -74,8 +74,8 @@ export function GapCards({ items, busy, onAction, onDone }: Props) {
               <span
                 className="tag"
                 style={{
-                  color: item.severity === "error" ? "#ff8a8a" : "#c9b458",
-                  borderColor: item.severity === "error" ? "#5b2424" : "#4a3f1c",
+                  color: item.severity === "error" ? "#c0392b" : "#9c8b3a",
+                  borderColor: item.severity === "error" ? "#e8c4c0" : "#e0d5b8",
                 }}
               >
                 {item.severity}
