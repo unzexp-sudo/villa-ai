@@ -16,9 +16,15 @@ from app.interior.scene import build_scene
 
 router = APIRouter()
 
-# routes.py lives at <workspace>/engine/app/interior/routes.py; parents[2] is
-# <workspace>/engine, so this resolves to engine/fixtures/villa_120.json.
-_FIXTURE = Path(__file__).resolve().parents[2] / "fixtures" / "villa_120.json"
+# routes.py lives at <root>/app/interior/routes.py, so <root> (the directory
+# holding the `app` package) is parents[2] — NOT parents[3]. Locally that is
+# `<repo>/engine`; in the Docker image `app` is copied to /app, so it is /app
+# and the fixtures sit at /app/fixtures. Walking up by a hardcoded number of
+# levels silently points at the wrong directory when the install layout
+# changes, so derive it from the package location instead.
+_APP_DIR = Path(__file__).resolve().parents[1]  # .../app
+_ROOT = _APP_DIR.parent                            # dir containing `app`
+_FIXTURE = _ROOT / "fixtures" / "villa_120.json"
 
 
 @router.get("/interior/scene", response_model=InteriorScene)

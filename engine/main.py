@@ -20,9 +20,12 @@ so imports are ``from app...`` (never ``from engine.app...``).
 
 import importlib
 import logging
+from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.contract.enums import (
     BuildingType,
@@ -85,7 +88,49 @@ def create_app() -> FastAPI:
         except Exception as exc:  # half-written sibling must not block boot
             log.info("Optional router %s failed to load (%s); continuing", mod_name, exc)
 
+    _mount_spa(app)
     return app
+
+
+# The built frontend lives next to the engine package. Locally it is absent
+# (Vite dev server serves it on :5173); in the Docker image the Dockerfile
+# copies the bundle to <root>/web/dist.
+_WEB_DIST = Path(__file__).resolve().parent / "web" / "dist"
+
+
+def _mount_spa(app: FastAPI) -> None:
+    """Serve the built SPA from the same origin as the API.
+
+    Mounted AFTER the /api routers so that API routes always win. The catch-all
+    route returns index.html for unknown paths so client-side routes such as
+    /interior and /app survive a hard refresh.
+    """
+    if not (_WEB_DIST / "index.html").is_file():
+        log.info("No SPA build at %s; serving API only", _WEB_DIST)
+        return
+
+    assets = _WEB_DIST / "assets"
+    if assets.is_dir():
+        app.mount("/assets", StaticFiles(directory=assets), name="assets")
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    def spa(full_path: str):
+        # Unknown API paths must 404, not fall through to the SPA shell —
+        # otherwise a frontend fetch to a missing endpoint receives HTML and
+        # the real error is lost.
+        if full_path == "api" or full_path.startswith("api/"):
+            raise HTTPException(status_code=404, detail="Not Found")
+        candidate = (_WEB_DIST / full_path).resolve()
+        # Guard against path traversal out of the dist directory.
+        if (
+            full_path
+            and candidate.is_file()
+            and str(candidate).startswith(str(_WEB_DIST.resolve()))
+        ):
+            return FileResponse(candidate)
+        return FileResponse(_WEB_DIST / "index.html")
+
+    log.info("Serving SPA from %s", _WEB_DIST)
 
 
 app = create_app()

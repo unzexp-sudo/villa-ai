@@ -11,8 +11,18 @@ from pydantic import BaseModel, Field
 
 from app.contract.enums import Country, DEFAULT_BANDS
 
-# config.py lives at <workspace>/engine/app/core/config.py
-WORKSPACE = Path(__file__).resolve().parents[3]
+# config.py lives at <root>/app/core/config.py
+#
+# <root> is the directory that CONTAINS the `app` package. Locally that is the
+# repo checkout (`<repo>/engine`), because `app` is a sibling of `core` under
+# `engine/`. In the Docker image `app` is copied to /app, so <root> is `/app`.
+#
+# Deriving it by walking up from __file__ is therefore wrong: it hardcodes an
+# assumption about how deep the package is nested, which changes between the
+# local checkout and the container. Resolve it by finding the directory that
+# actually holds the `app` package instead.
+_APP_DIR = Path(__file__).resolve().parents[1]  # .../app
+WORKSPACE = _APP_DIR.parent                      # dir containing `app`
 DEFAULT_DATA_DIR = str(WORKSPACE / "data")
 
 

@@ -1,0 +1,23 @@
+# Keep the build context small — node_modules alone is 251 MB locally.
+.git
+.gitignore
+.workbuddy-ai/
+.pytest_cache/
+.pytest_tmp/
+__pycache__/
+*.py[cod]
+.venv/
+.DS_Store
+*.log
+
+# Frontend
+web/node_modules/
+web/dist/
+web/.vite/
+web/vite.config.ts.timestamp-*.mjs
+
+# Local runtime data (the container creates its own /app/data)
+data/
+
+# Docs are not needed in the image
+docs/

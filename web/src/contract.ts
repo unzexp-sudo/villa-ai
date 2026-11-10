@@ -2,7 +2,22 @@
 // Orchestrator-owned. Do NOT edit. Derive everything from these constants.
 
 export const PRODUCT_NAME = "Villa AI";
-export const API_BASE = "http://localhost:8000";
+
+// API origin.
+//
+// Local dev: the Vite dev server runs on :5173 and the FastAPI engine runs
+// on :8000 as a SEPARATE process, so the frontend needs the absolute origin.
+//
+// Production: the Docker image serves the built SPA and the /api routes from
+// the SAME FastAPI process, so the correct origin is the page's own origin.
+// `import.meta.env.DEV` is false in a production `vite build`, which makes
+// this work with no build-time configuration and no CORS in production.
+//
+// `import.meta.env` is replaced statically by Vite at build time, so this
+// constant stays a plain string and the tree-shaking behaviour is unchanged.
+export const API_BASE = import.meta.env.DEV
+  ? "http://localhost:8000"
+  : window.location.origin;
 
 export type SystemKind = "drainage" | "water" | "air" | "power" | "fire";
 export const SYSTEM_ORDER: readonly SystemKind[] = [
@@ -200,6 +215,41 @@ export interface RunResult {
   metrics: Record<string, number>;
   started_at: number; finished_at: number | null;
   error: string | null;
+}
+
+/**
+ * The first (and in v1 the only) level. Mirrors `BuildingModel.level0` on the
+ * server, which is a property there — TS cannot mirror a property that reads
+ * off `levels[0]` without a getter, so this is the one place the two differ in
+ * shape. v1 designs level 0 only (MODULE_CONTRACT.md §2).
+ */
+export function level0(model: BuildingModel): Level {
+  return model.levels[0];
+}
+
+/**
+ * Plan bounding box from architectural geometry (walls, room polygons, shafts).
+ *
+ * Mirrors `BuildingModel.bbox()` on the server, including the exclusion of site
+ * connection points and outdoor equipment — those legitimately sit outside the
+ * footprint, and letting them stretch the view shrinks the plan to a corner.
+ * Returns metres, `[minx, miny, maxx, maxy]`.
+ */
+export function modelBBox(model: BuildingModel): [number, number, number, number] {
+  let minx = Infinity, miny = Infinity, maxx = -Infinity, maxy = -Infinity;
+  const add = (x: number, y: number) => {
+    if (x < minx) minx = x;
+    if (x > maxx) maxx = x;
+    if (y < miny) miny = y;
+    if (y > maxy) maxy = y;
+  };
+  for (const lvl of model.levels) {
+    for (const w of lvl.walls) { add(w.start.x, w.start.y); add(w.end.x, w.end.y); }
+    for (const r of lvl.rooms) for (const p of r.polygon) add(p.x, p.y);
+    for (const s of lvl.shafts) for (const p of s.polygon) add(p.x, p.y);
+  }
+  if (!Number.isFinite(minx)) return [0, 0, 0, 0];
+  return [minx, miny, maxx, maxy];
 }
 
 export const DEFAULT_BANDS: Readonly<Record<SystemKind, readonly [number, number]>> = {
