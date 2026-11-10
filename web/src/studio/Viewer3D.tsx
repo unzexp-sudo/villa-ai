@@ -1,8 +1,8 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
-import type { BuildingModel, Layer, Point3D, SystemKind } from "../contract";
+import type { BuildingModel, Layer, Point3D, Segment, SystemKind } from "../contract";
 import { CLASH_COLOR, SYSTEM_COLORS, SYSTEM_ORDER, level0, modelBBox } from "../contract";
 
 interface Props {
@@ -32,6 +32,8 @@ const toThree = (x: number, y: number, z: number): [number, number, number] => [
 export function Viewer3D({ model, layers, clash }: Props) {
   const [hidden, setHidden] = useState<Set<SystemKind>>(new Set());
   const [showShell, setShowShell] = useState(true);
+  const [dimensionScale, setDimensionScale] = useState<1 | 6>(6);
+  const [selectedSegment, setSelectedSegment] = useState<Segment | null>(null);
   const centre = useMemo(() => {
     const [minx, miny, maxx, maxy] = modelBBox(model);
     if (maxx > minx && maxy > miny) {
@@ -61,7 +63,15 @@ export function Viewer3D({ model, layers, clash }: Props) {
           {SYSTEM_ORDER.filter((s) => !hidden.has(s)).map((s) => {
             const layer = layers[s];
             if (!layer) return null;
-            return <SystemLines key={s} layer={layer} color={SYSTEM_COLORS[s]} />;
+            return (
+              <SystemLines
+                key={s}
+                layer={layer}
+                color={SYSTEM_COLORS[s]}
+                dimensionScale={dimensionScale}
+                onSelect={setSelectedSegment}
+              />
+            );
           })}
         </group>
 
@@ -97,11 +107,58 @@ export function Viewer3D({ model, layers, clash }: Props) {
           </label>
         ))}
         <hr className="divider" />
+        <button
+          type="button"
+          className="btn"
+          aria-pressed={dimensionScale === 1}
+          onClick={() => setDimensionScale((v) => (v === 1 ? 6 : 1))}
+        >
+          {dimensionScale === 1 ? "Show pipes enlarged ×6" : "Show true pipe sizes"}
+        </button>
+        <p className="muted x-small">
+          {dimensionScale === 1
+            ? "True physical dimensions"
+            : "Pipe and duct bodies enlarged ×6; labels remain true size"}
+        </p>
         <label className="v3d-row">
           <input type="checkbox" checked={showShell} onChange={() => setShowShell((v) => !v)} />
           <span>Show slab & walls</span>
         </label>
       </div>
+
+      {selectedSegment && (
+        <div
+          className="card"
+          role="status"
+          style={{
+            position: "absolute",
+            left: 12,
+            bottom: 12,
+            maxWidth: 280,
+            padding: "10px 12px",
+            background: "rgba(255,255,255,0.94)",
+            backdropFilter: "blur(6px)",
+          }}
+        >
+          <div className="row spread">
+            <strong>{selectedSegment.system.toUpperCase()} · {selectedSegment.id}</strong>
+            <button type="button" className="link" onClick={() => setSelectedSegment(null)} aria-label="Close size details">×</button>
+          </div>
+          <p className="muted small" style={{ margin: "5px 0 0" }}>
+            {selectedSegment.kind === "duct"
+              ? `Duct ${selectedSegment.width_mm ?? "—"} × ${selectedSegment.height_mm ?? "—"} mm`
+              : selectedSegment.diameter_mm
+                ? `${selectedSegment.kind === "cable" ? "Conduit" : "Pipe"} Ø${selectedSegment.diameter_mm} mm`
+                : "No calculated section size"}
+            {selectedSegment.material ? ` · ${selectedSegment.material}` : ""}
+          </p>
+          <p className="muted x-small" style={{ margin: "3px 0 0" }}>
+            {Number(selectedSegment.meta.length_m ?? 0).toFixed(2)} m segment
+            {selectedSegment.slope_pct > 0 ? ` · slope ${selectedSegment.slope_pct}%` : ""}
+            {selectedSegment.meta.cable_csa_mm2 ? ` · ${selectedSegment.meta.cable_csa_mm2} mm² cable` : ""}
+          </p>
+        </div>
+      )}
 
       <div className="v3d-clash card">
         <p className="eyebrow">Coordinator · clash check</p>
@@ -162,32 +219,132 @@ function Shell({ model }: { model: BuildingModel }) {
   );
 }
 
-function SystemLines({ layer, color }: { layer: Layer; color: string }) {
-  const geometry = useMemo(() => {
+function SystemLines({
+  layer,
+  color,
+  dimensionScale,
+  onSelect,
+}: {
+  layer: Layer;
+  color: string;
+  dimensionScale: number;
+  onSelect: (segment: Segment) => void;
+}) {
+  const { lineGeometry, roundRuns, ductRuns } = useMemo(() => {
     const positions: number[] = [];
+    const round: Array<{
+      key: string;
+      segment: Segment;
+      midpoint: THREE.Vector3;
+      quaternion: THREE.Quaternion;
+      length: number;
+      diameterM: number;
+    }> = [];
+    const ducts: Array<{
+      key: string;
+      segment: Segment;
+      midpoint: THREE.Vector3;
+      quaternion: THREE.Quaternion;
+      length: number;
+    }> = [];
+
     for (const seg of layer.segments) {
       const pts: Point3D[] = seg.polyline;
+      const diameterM = Number(seg.diameter_mm ?? 0) / 1000;
+      const widthM = Number(seg.width_mm ?? 0) / 1000;
+      const heightM = Number(seg.height_mm ?? 0) / 1000;
+      const isDuct = seg.kind === "duct" && widthM > 0 && heightM > 0;
+      const isRound = !isDuct && diameterM > 0 &&
+        ["pipe", "sprinkler_pipe", "refrigerant", "conduit", "cable"].includes(seg.kind);
+
       for (let i = 0; i < pts.length - 1; i++) {
         // Same mapping as the shell: plan (x, y, z) -> three (x, z, -y).
-        // Using +y here mirrored every route in Z, which put the whole MEP
-        // network outside the building it belonged to.
         const [ax, ay, az] = toThree(pts[i].x, pts[i].y, pts[i].z);
         const [bx, by, bz] = toThree(pts[i + 1].x, pts[i + 1].y, pts[i + 1].z);
-        positions.push(ax, ay, az, bx, by, bz);
+        const start = new THREE.Vector3(ax, ay, az);
+        const end = new THREE.Vector3(bx, by, bz);
+        const direction = end.clone().sub(start);
+        const length = direction.length();
+        if (length < 1e-6) continue;
+
+        if (isDuct) {
+          ducts.push({
+            key: `${seg.id}:${i}`,
+            segment: seg,
+            midpoint: start.clone().add(end).multiplyScalar(0.5),
+            quaternion: new THREE.Quaternion().setFromUnitVectors(
+              new THREE.Vector3(0, 1, 0), direction.normalize(),
+            ),
+            length,
+          });
+        } else if (isRound) {
+          round.push({
+            key: `${seg.id}:${i}`,
+            segment: seg,
+            midpoint: start.clone().add(end).multiplyScalar(0.5),
+            quaternion: new THREE.Quaternion().setFromUnitVectors(
+              new THREE.Vector3(0, 1, 0), direction.normalize(),
+            ),
+            length,
+            diameterM,
+          });
+        } else {
+          positions.push(ax, ay, az, bx, by, bz);
+        }
       }
     }
+
     const g = new THREE.BufferGeometry();
     g.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
-    return g;
+    return { lineGeometry: g, roundRuns: round, ductRuns: ducts };
   }, [layer]);
 
   const dotGeo = useMemo(() => new THREE.SphereGeometry(0.035, 8, 8), []);
 
   return (
     <group>
-      <lineSegments geometry={geometry}>
-        <lineBasicMaterial color={color} linewidth={2} />
-      </lineSegments>
+      {roundRuns.map((run) => (
+        <mesh
+          key={run.key}
+          position={run.midpoint}
+          quaternion={run.quaternion}
+          onClick={(event) => {
+            event.stopPropagation();
+            onSelect(run.segment);
+          }}
+        >
+          <cylinderGeometry args={[
+            (run.diameterM * dimensionScale) / 2,
+            (run.diameterM * dimensionScale) / 2,
+            run.length,
+            10,
+          ]} />
+          <meshStandardMaterial color={color} roughness={0.65} metalness={0.05} />
+        </mesh>
+      ))}
+      {ductRuns.map((run) => (
+        <mesh
+          key={run.key}
+          position={run.midpoint}
+          quaternion={run.quaternion}
+          onClick={(event) => {
+            event.stopPropagation();
+            onSelect(run.segment);
+          }}
+        >
+          <boxGeometry args={[
+            (Number(run.segment.width_mm) / 1000) * dimensionScale,
+            run.length,
+            (Number(run.segment.height_mm) / 1000) * dimensionScale,
+          ]} />
+          <meshStandardMaterial color={color} roughness={0.65} metalness={0.05} />
+        </mesh>
+      ))}
+      {lineGeometry.getAttribute("position").count > 0 && (
+        <lineSegments geometry={lineGeometry}>
+          <lineBasicMaterial color={color} linewidth={2} />
+        </lineSegments>
+      )}
       {layer.devices.map((d) => {
         const [dx, dy, dz] = toThree(d.at.x, d.at.y, d.at.z);
         return (
