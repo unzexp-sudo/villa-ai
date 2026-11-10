@@ -1,0 +1,94 @@
+{
+  "schema_version": "1.0",
+  "id": "apartment_85",
+  "name": "Apartment 85 - hand-authored M1 fixture (~85 m2)",
+  "building_type": "apartment",
+  "country": "ID",
+  "storeys": 1,
+  "ceiling_height": 2.7,
+  "levels": [
+    {
+      "id": "l0",
+      "name": "Typical floor",
+      "elevation": 0.0,
+      "floor_to_floor": 3.0,
+      "ceiling_void": 0.35,
+      "walls": [
+        {"id": "w_south", "start": {"x": 0.0, "y": 0.0}, "end": {"x": 10.0, "y": 0.0}, "thickness": 0.2, "height": 3.0, "is_exterior": true},
+        {"id": "w_east", "start": {"x": 10.0, "y": 0.0}, "end": {"x": 10.0, "y": 8.5}, "thickness": 0.2, "height": 3.0, "is_exterior": true},
+        {"id": "w_north", "start": {"x": 10.0, "y": 8.5}, "end": {"x": 0.0, "y": 8.5}, "thickness": 0.2, "height": 3.0, "is_exterior": true},
+        {"id": "w_west", "start": {"x": 0.0, "y": 8.5}, "end": {"x": 0.0, "y": 0.0}, "thickness": 0.2, "height": 3.0, "is_exterior": true},
+        {"id": "w_x4", "start": {"x": 4.0, "y": 0.0}, "end": {"x": 4.0, "y": 8.5}, "thickness": 0.15, "height": 3.0, "is_exterior": false},
+        {"id": "w_w_y3", "start": {"x": 0.0, "y": 3.0}, "end": {"x": 4.0, "y": 3.0}, "thickness": 0.15, "height": 3.0, "is_exterior": false},
+        {"id": "w_w_y55", "start": {"x": 0.0, "y": 5.5}, "end": {"x": 4.0, "y": 5.5}, "thickness": 0.15, "height": 3.0, "is_exterior": false},
+        {"id": "w_e_y55", "start": {"x": 4.0, "y": 5.5}, "end": {"x": 10.0, "y": 5.5}, "thickness": 0.15, "height": 3.0, "is_exterior": false}
+      ],
+      "openings": [
+        {"id": "d_kitchen", "wall_id": "w_x4", "at": 1.5, "width": 0.8, "kind": "door", "sill": 0.0, "head": 2.1},
+        {"id": "d_bath", "wall_id": "w_x4", "at": 4.25, "width": 0.8, "kind": "door", "sill": 0.0, "head": 2.1},
+        {"id": "d_bed2", "wall_id": "w_x4", "at": 7.0, "width": 0.8, "kind": "door", "sill": 0.0, "head": 2.1},
+        {"id": "d_bed1", "wall_id": "w_e_y55", "at": 3.0, "width": 0.8, "kind": "door", "sill": 0.0, "head": 2.1},
+        {"id": "d_entry", "wall_id": "w_south", "at": 6.0, "width": 1.0, "kind": "door", "sill": 0.0, "head": 2.1},
+        {"id": "win_living", "wall_id": "w_east", "at": 3.0, "width": 1.6, "kind": "window", "sill": 0.9, "head": 2.1},
+        {"id": "win_bed1", "wall_id": "w_north", "at": 7.0, "width": 1.4, "kind": "window", "sill": 0.9, "head": 2.1},
+        {"id": "win_bed2", "wall_id": "w_north", "at": 2.0, "width": 1.2, "kind": "window", "sill": 0.9, "head": 2.1},
+        {"id": "win_kitchen", "wall_id": "w_west", "at": 1.5, "width": 1.0, "kind": "window", "sill": 1.2, "head": 2.1},
+        {"id": "win_bath", "wall_id": "w_west", "at": 4.25, "width": 0.8, "kind": "window", "sill": 1.5, "head": 2.1}
+      ],
+      "rooms": [
+        {"id": "kitchen", "name": "Kitchen", "type": "kitchen", "polygon": [{"x": 0.0, "y": 0.0}, {"x": 4.0, "y": 0.0}, {"x": 4.0, "y": 3.0}, {"x": 0.0, "y": 3.0}], "wet": true, "area_m2": 12.0, "ceiling_z": 2.7},
+        {"id": "bath", "name": "Bathroom", "type": "bathroom", "polygon": [{"x": 0.0, "y": 3.0}, {"x": 4.0, "y": 3.0}, {"x": 4.0, "y": 5.5}, {"x": 0.0, "y": 5.5}], "wet": true, "area_m2": 10.0, "ceiling_z": 2.7},
+        {"id": "bed2", "name": "Bedroom 2", "type": "bedroom", "polygon": [{"x": 0.0, "y": 5.5}, {"x": 4.0, "y": 5.5}, {"x": 4.0, "y": 8.5}, {"x": 0.0, "y": 8.5}], "wet": false, "area_m2": 12.0, "ceiling_z": 2.7},
+        {"id": "living", "name": "Living / Dining", "type": "living", "polygon": [{"x": 4.0, "y": 0.0}, {"x": 10.0, "y": 0.0}, {"x": 10.0, "y": 5.5}, {"x": 4.0, "y": 5.5}], "wet": false, "area_m2": 33.0, "ceiling_z": 2.7},
+        {"id": "bed1", "name": "Bedroom 1", "type": "bedroom", "polygon": [{"x": 4.0, "y": 5.5}, {"x": 10.0, "y": 5.5}, {"x": 10.0, "y": 8.5}, {"x": 4.0, "y": 8.5}], "wet": false, "area_m2": 18.0, "ceiling_z": 2.7}
+      ],
+      "fixtures": [
+        {"id": "a_wc", "kind": "wc", "at": {"x": 1.0, "y": 4.0}, "room_id": "bath", "z": 0.0, "props": {"fixture_units": 2, "demand_lpm": 6.0}},
+        {"id": "a_basin", "kind": "basin", "at": {"x": 3.0, "y": 4.0}, "room_id": "bath", "z": 0.0, "props": {"fixture_units": 1, "demand_lpm": 4.0}},
+        {"id": "a_shower", "kind": "shower", "at": {"x": 1.0, "y": 5.2}, "room_id": "bath", "z": 0.0, "props": {"demand_lpm": 9.0}},
+        {"id": "a_drain", "kind": "floor_drain", "at": {"x": 2.0, "y": 4.5}, "room_id": "bath", "z": 0.0, "props": {}},
+        {"id": "a_ksink", "kind": "kitchen_sink", "at": {"x": 2.0, "y": 1.5}, "room_id": "kitchen", "z": 0.0, "props": {"demand_lpm": 8.0}},
+        {"id": "a_kdrain", "kind": "floor_drain", "at": {"x": 2.0, "y": 2.0}, "room_id": "kitchen", "z": 0.0, "props": {}}
+      ],
+      "equipment": [
+        {"id": "a_tank", "kind": "water_tank", "at": {"x": 10.6, "y": 1.0}, "room_id": null, "z": 0.0, "props": {"capacity_l": 750, "material": "HDPE"}},
+        {"id": "a_pump", "kind": "pump", "at": {"x": 9.5, "y": 1.0}, "room_id": null, "z": 0.2, "props": {"head_m": 25.0, "flow_lpm": 35.0}},
+        {"id": "a_heater", "kind": "water_heater", "at": {"x": 3.5, "y": 4.0}, "room_id": "bath", "z": 1.8, "props": {"capacity_l": 50}},
+        {"id": "a_panel", "kind": "electrical_panel", "at": {"x": 9.5, "y": 1.5}, "room_id": "living", "z": 1.5, "props": {"circuits": 10, "rating_a": 40}},
+        {"id": "a_db", "kind": "distribution_board", "at": {"x": 9.0, "y": 1.2}, "room_id": "living", "z": 1.4, "props": {"ways": 10}},
+        {"id": "a_sewer", "kind": "sewer_point", "at": {"x": 0.5, "y": 0.5}, "room_id": null, "z": 0.0, "props": {}},
+        {"id": "a_meter", "kind": "water_meter", "at": {"x": 0.5, "y": 1.2}, "room_id": null, "z": 0.0, "props": {}},
+        {"id": "a_acout", "kind": "ac_outdoor", "at": {"x": 10.6, "y": 4.0}, "room_id": null, "z": 0.3, "props": {"capacity_kw": 3.5}},
+        {"id": "a_sprinkler1", "kind": "sprinkler", "at": {"x": 6.0, "y": 3.0}, "room_id": "living", "z": 2.65, "props": {"k_factor": 80, "coverage_m2": 12.0}},
+        {"id": "a_sprinkler2", "kind": "sprinkler", "at": {"x": 7.0, "y": 7.0}, "room_id": "bed1", "z": 2.65, "props": {"k_factor": 80, "coverage_m2": 12.0}},
+        {"id": "a_smoke1", "kind": "smoke_detector", "at": {"x": 2.0, "y": 7.0}, "room_id": "bed2", "z": 2.7, "props": {}},
+        {"id": "a_smoke2", "kind": "smoke_detector", "at": {"x": 6.0, "y": 4.5}, "room_id": "living", "z": 2.7, "props": {}},
+        {"id": "a_riser", "kind": "riser", "at": {"x": 4.2, "y": 2.75}, "room_id": null, "z": 0.0, "props": {}},
+        {"id": "a_exhaust", "kind": "exhaust_fan", "at": {"x": 3.5, "y": 5.2}, "room_id": "bath", "z": 2.4, "props": {"flow_m3h": 90}}
+      ],
+      "shafts": [
+        {"id": "a_shaft", "polygon": [{"x": 4.0, "y": 2.6}, {"x": 4.4, "y": 2.6}, {"x": 4.4, "y": 5.6}, {"x": 4.0, "y": 5.6}], "from_z": 0.0, "to_z": 3.0, "systems": ["drainage", "water", "fire"]}
+      ]
+    }
+  ],
+  "scale": {"p1": {"x": 0.0, "y": 0.0}, "p2": {"x": 10.0, "y": 0.0}, "distance_m": 10.0, "calibrated_by": "fixture"},
+  "site": {
+    "sewer_point": {"x": 0.5, "y": 0.5},
+    "septic_point": null,
+    "water_meter": {"x": 0.5, "y": 1.2},
+    "power_incomer": {"x": 9.8, "y": 8.2}
+  },
+  "assumptions": [
+    {"id": "a_scale", "field": "scale.distance_m", "value": "10.0", "reason": "Plan drawn directly in metres; the south wall spans 10 m so the scale is 1:1", "source": "default", "created_at": 1762732800.0},
+    {"id": "a_ceiling", "field": "ceiling_height", "value": "2.7", "reason": "Indonesian residential default ceiling height in metres", "source": "default", "created_at": 1762732800.0},
+    {"id": "a_wet", "field": "rooms.wet", "value": "west wing", "reason": "Kitchen and bathroom flagged wet to drive drainage/water agents; clustered on one side", "source": "default", "created_at": 1762732800.0},
+    {"id": "a_type", "field": "building_type", "value": "apartment", "reason": "v1 apartment scope; fire agent defaults ON for apartments", "source": "default", "created_at": 1762732800.0},
+    {"id": "a_fire", "field": "equipment.fire", "value": "sprinklers + smoke detectors", "reason": "Fire equipment is allowed and seeded for the apartment per the locked default", "source": "default", "created_at": 1762732800.0},
+    {"id": "a_country", "field": "country", "value": "ID", "reason": "Indonesia plus international baseline is the v1 country pack", "source": "default", "created_at": 1762732800.0},
+    {"id": "a_storeys", "field": "storeys", "value": "1", "reason": "v1 scope is single level", "source": "default", "created_at": 1762732800.0},
+    {"id": "a_source", "field": "source", "value": "fixture", "reason": "Hand-authored test data, not parsed from a real floor plan", "source": "default", "created_at": 1762732800.0}
+  ],
+  "source": "fixture",
+  "created_at": 1762732800.0,
+  "updated_at": 1762732800.0
+}

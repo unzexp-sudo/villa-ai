@@ -1,0 +1,78 @@
+{
+  "schema_version": "1.0",
+  "id": "villa_minimal",
+  "name": "Villa Minimal - hand-authored M1 fixture (sparse, with deliberate gaps)",
+  "building_type": "villa",
+  "country": "ID",
+  "storeys": 1,
+  "levels": [
+    {
+      "id": "l0",
+      "name": "Ground floor",
+      "elevation": 0.0,
+      "floor_to_floor": 3.0,
+      "ceiling_void": 0.35,
+      "walls": [
+        {"id": "w_south", "start": {"x": 0.0, "y": 0.0}, "end": {"x": 8.0, "y": 0.0}, "thickness": 0.2, "height": 3.0, "is_exterior": true},
+        {"id": "w_east", "start": {"x": 8.0, "y": 0.0}, "end": {"x": 8.0, "y": 8.0}, "thickness": 0.2, "height": 3.0, "is_exterior": true},
+        {"id": "w_north", "start": {"x": 8.0, "y": 8.0}, "end": {"x": 0.0, "y": 8.0}, "thickness": 0.2, "height": 3.0, "is_exterior": true},
+        {"id": "w_west", "start": {"x": 0.0, "y": 8.0}, "end": {"x": 0.0, "y": 0.0}, "thickness": 0.2, "height": 3.0, "is_exterior": true},
+        {"id": "w_x5", "start": {"x": 5.0, "y": 0.0}, "end": {"x": 5.0, "y": 5.0}, "thickness": 0.15, "height": 3.0, "is_exterior": false},
+        {"id": "w_y3", "start": {"x": 5.0, "y": 3.0}, "end": {"x": 8.0, "y": 3.0}, "thickness": 0.15, "height": 3.0, "is_exterior": false},
+        {"id": "w_y5", "start": {"x": 0.0, "y": 5.0}, "end": {"x": 8.0, "y": 5.0}, "thickness": 0.15, "height": 3.0, "is_exterior": false},
+        {"id": "w_x4_top", "start": {"x": 4.0, "y": 5.0}, "end": {"x": 4.0, "y": 8.0}, "thickness": 0.15, "height": 3.0, "is_exterior": false}
+      ],
+      "openings": [
+        {"id": "d_kitchen", "wall_id": "w_x5", "at": 1.5, "width": 0.8, "kind": "door", "sill": 0.0, "head": 2.1},
+        {"id": "d_bath", "wall_id": "w_x5", "at": 4.0, "width": 0.8, "kind": "door", "sill": 0.0, "head": 2.1},
+        {"id": "d_bed1", "wall_id": "w_y5", "at": 2.0, "width": 0.8, "kind": "door", "sill": 0.0, "head": 2.1},
+        {"id": "d_bed2", "wall_id": "w_y5", "at": 6.0, "width": 0.8, "kind": "door", "sill": 0.0, "head": 2.1},
+        {"id": "d_entry", "wall_id": "w_south", "at": 2.5, "width": 1.0, "kind": "door", "sill": 0.0, "head": 2.1},
+        {"id": "win_s", "wall_id": "w_south", "at": 6.0, "width": 1.4, "kind": "window", "sill": 0.9, "head": 2.1},
+        {"id": "win_e", "wall_id": "w_east", "at": 6.5, "width": 1.2, "kind": "window", "sill": 0.9, "head": 2.1},
+        {"id": "win_n", "wall_id": "w_north", "at": 4.0, "width": 1.2, "kind": "window", "sill": 0.9, "head": 2.1},
+        {"id": "win_w", "wall_id": "w_west", "at": 6.5, "width": 1.0, "kind": "window", "sill": 1.0, "head": 2.1}
+      ],
+      "rooms": [
+        {"id": "living", "name": "Living", "type": "living", "polygon": [{"x": 0.0, "y": 0.0}, {"x": 5.0, "y": 0.0}, {"x": 5.0, "y": 5.0}, {"x": 0.0, "y": 5.0}], "wet": false, "area_m2": 25.0, "ceiling_z": 2.7},
+        {"id": "kitchen", "name": "Kitchen", "type": "kitchen", "polygon": [{"x": 5.0, "y": 0.0}, {"x": 8.0, "y": 0.0}, {"x": 8.0, "y": 3.0}, {"x": 5.0, "y": 3.0}], "wet": true, "area_m2": 9.0, "ceiling_z": 2.7},
+        {"id": "bath", "name": "Bathroom", "type": "bathroom", "polygon": [{"x": 5.0, "y": 3.0}, {"x": 8.0, "y": 3.0}, {"x": 8.0, "y": 5.0}, {"x": 5.0, "y": 5.0}], "wet": true, "area_m2": 6.0, "ceiling_z": 2.7},
+        {"id": "bed1", "name": "Bedroom 1", "type": "bedroom", "polygon": [{"x": 0.0, "y": 5.0}, {"x": 4.0, "y": 5.0}, {"x": 4.0, "y": 8.0}, {"x": 0.0, "y": 8.0}], "wet": false, "area_m2": 12.0, "ceiling_z": 2.7},
+        {"id": "bed2", "name": "Bedroom 2", "type": "bedroom", "polygon": [{"x": 4.0, "y": 5.0}, {"x": 8.0, "y": 5.0}, {"x": 8.0, "y": 8.0}, {"x": 4.0, "y": 8.0}], "wet": false, "area_m2": 12.0, "ceiling_z": 2.7}
+      ],
+      "fixtures": [
+        {"id": "v_wc", "kind": "wc", "at": {"x": 6.0, "y": 3.8}, "room_id": "bath", "z": 0.0, "props": {"fixture_units": 2, "demand_lpm": 6.0}},
+        {"id": "v_basin", "kind": "basin", "at": {"x": 7.5, "y": 3.8}, "room_id": "bath", "z": 0.0, "props": {"fixture_units": 1, "demand_lpm": 4.0}},
+        {"id": "v_shower", "kind": "shower", "at": {"x": 6.0, "y": 4.8}, "room_id": "bath", "z": 0.0, "props": {"demand_lpm": 9.0}},
+        {"id": "v_drain", "kind": "floor_drain", "at": {"x": 6.8, "y": 4.2}, "room_id": "bath", "z": 0.0, "props": {}},
+        {"id": "v_ksink", "kind": "kitchen_sink", "at": {"x": 6.5, "y": 1.5}, "room_id": "kitchen", "z": 0.0, "props": {"demand_lpm": 8.0}},
+        {"id": "v_kdrain", "kind": "floor_drain", "at": {"x": 6.5, "y": 2.0}, "room_id": "kitchen", "z": 0.0, "props": {}}
+      ],
+      "equipment": [
+        {"id": "v_meter", "kind": "water_meter", "at": {"x": 0.5, "y": 0.5}, "room_id": null, "z": 0.0, "props": {}},
+        {"id": "v_acout", "kind": "ac_outdoor", "at": {"x": 8.6, "y": 4.0}, "room_id": null, "z": 0.3, "props": {"capacity_kw": 3.5}}
+      ],
+      "shafts": []
+    }
+  ],
+  "scale": {"p1": {"x": 0.0, "y": 0.0}, "p2": {"x": 8.0, "y": 0.0}, "distance_m": 8.0, "calibrated_by": "fixture"},
+  "site": {
+    "sewer_point": null,
+    "septic_point": null,
+    "water_meter": {"x": 0.5, "y": 0.5},
+    "power_incomer": null
+  },
+  "assumptions": [
+    {"id": "a_ceiling", "field": "ceiling_height", "value": "2.7 (engine default)", "reason": "ceiling_height was not supplied; the 2.7 m default is used and flagged for the Intake Auditor", "source": "default", "created_at": 1762732800.0},
+    {"id": "a_tank", "field": "equipment.water_tank", "value": "missing", "reason": "Water tank deliberately absent so the Intake Auditor has a real gap to find", "source": "skip", "created_at": 1762732800.0},
+    {"id": "a_panel", "field": "equipment.electrical_panel", "value": "missing", "reason": "Electrical panel deliberately absent so the Intake Auditor has a real gap to find", "source": "skip", "created_at": 1762732800.0},
+    {"id": "a_sewer", "field": "equipment.sewer_point", "value": "missing", "reason": "Sewer point deliberately absent (site.sewer_point is also null) so the Intake Auditor has a real gap to find", "source": "skip", "created_at": 1762732800.0},
+    {"id": "a_scale", "field": "scale.distance_m", "value": "8.0", "reason": "Plan drawn directly in metres; the south wall spans 8 m so the scale is 1:1", "source": "default", "created_at": 1762732800.0},
+    {"id": "a_country", "field": "country", "value": "ID", "reason": "Indonesia plus international baseline is the v1 country pack", "source": "default", "created_at": 1762732800.0},
+    {"id": "a_storeys", "field": "storeys", "value": "1", "reason": "v1 scope is single level", "source": "default", "created_at": 1762732800.0},
+    {"id": "a_source", "field": "source", "value": "fixture", "reason": "Hand-authored test data, not parsed from a real floor plan", "source": "default", "created_at": 1762732800.0}
+  ],
+  "source": "fixture",
+  "created_at": 1762732800.0,
+  "updated_at": 1762732800.0
+}

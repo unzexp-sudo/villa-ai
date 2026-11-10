@@ -1,0 +1,278 @@
+/* Feature-local styles for the additive /interior section.
+   Every colour comes from the shared dark theme tokens in styles.css —
+   no new palette, no new fonts. All selectors are prefixed .int- . */
+
+.int-page {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 26px 22px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.int-head-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.int-title {
+  font-size: clamp(1.6rem, 3.5vw, 2.3rem);
+  margin: 0 0 6px;
+}
+
+.int-subtitle {
+  color: var(--muted);
+  margin: 0;
+  font-size: 0.92rem;
+  max-width: 640px;
+}
+
+.int-back {
+  font-size: 0.88rem;
+  white-space: nowrap;
+  padding-top: 6px;
+}
+
+/* Disclaimer banner — always visible, near the top, never behind a toggle. */
+.int-disclaimer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--accent-dim);
+  border: 1px solid var(--accent);
+  border-left-width: 4px;
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  color: var(--text);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+.int-disclaimer-mark {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.int-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Toolbar — wraps on narrow screens. */
+.int-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px 22px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+}
+.int-toolgroup {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.int-label {
+  color: var(--muted);
+  font-size: 0.74rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Mode toggle (3D model / Walk-through). */
+.int-segmented {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.int-seg {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+  padding: 8px 16px;
+  font-size: 0.88rem;
+}
+.int-seg + .int-seg {
+  border-left: 1px solid var(--border);
+}
+.int-seg:hover:not(:disabled) {
+  background: var(--surface-2);
+  border-color: var(--border);
+}
+.int-seg-active,
+.int-seg-active:hover:not(:disabled) {
+  background: var(--accent-dim);
+  border-color: var(--border);
+  color: var(--accent);
+  font-weight: 650;
+}
+
+/* Room tabs. */
+.int-rooms {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+.int-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.int-tab {
+  background: var(--surface-2);
+  color: var(--muted);
+  padding: 7px 12px;
+  font-size: 0.84rem;
+  border-radius: 999px;
+}
+.int-tab:hover:not(:disabled) {
+  color: var(--text);
+}
+.int-tab-active,
+.int-tab-active:hover:not(:disabled) {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 650;
+}
+
+/* Build slider — drives the "walls rise" effect. */
+.int-build {
+  flex: 0 1 220px;
+}
+.int-slider {
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  accent-color: var(--accent);
+}
+.int-slider:focus {
+  outline: none;
+  border-color: transparent;
+}
+
+/* Viewer container: a definite height so the Canvas renders. */
+.int-viewer {
+  position: relative;
+  height: clamp(420px, 60vh, 680px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.int-viewer > div {
+  width: 100%;
+  height: 100%;
+}
+
+/* Compact scene summary. */
+.int-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 22px;
+  align-items: center;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+.int-stat strong {
+  color: var(--text);
+  font-weight: 650;
+}
+.int-stat-id {
+  margin-left: auto;
+  color: var(--muted);
+  opacity: 0.85;
+}
+
+/* Loading / error cards. */
+.int-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px;
+}
+.int-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  padding: 46px 22px;
+}
+.int-status-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 620;
+  color: var(--text);
+}
+.int-muted {
+  color: var(--muted);
+  margin: 0;
+  font-size: 0.9rem;
+}
+.int-error {
+  border-color: var(--danger);
+}
+.int-error .int-status-title {
+  color: var(--danger);
+}
+.int-retry {
+  margin-top: 8px;
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+  font-weight: 650;
+  padding: 9px 20px;
+}
+.int-retry:hover:not(:disabled) {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.int-spinner {
+  width: 26px;
+  height: 26px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: int-spin 0.9s linear infinite;
+}
+@keyframes int-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 640px) {
+  .int-page {
+    padding: 18px 14px 36px;
+  }
+  .int-toolbar {
+    gap: 14px;
+  }
+  .int-build {
+    flex: 1 1 100%;
+  }
+  .int-stat-id {
+    margin-left: 0;
+    flex: 1 1 100%;
+  }
+}

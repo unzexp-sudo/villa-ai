@@ -1,0 +1,34 @@
+[project]
+name = "villa-ai-engine"
+version = "0.1.0"
+description = "Multi-agent preliminary MEP design engine"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.110",
+  "uvicorn>=0.27",
+  "pydantic>=2.6",
+  "python-multipart>=0.0.9",
+  "shapely>=2.0",
+  "networkx>=3.2",
+  "numpy>=1.26",
+  "ezdxf>=1.1",
+  "Pillow>=10",
+  "pypdf>=4",
+  "reportlab>=4",
+  "httpx>=0.27",
+]
+
+[project.optional-dependencies]
+llm = ["anthropic>=0.30"]
+bim = ["ifcopenshell>=0.7"]
+jobs = ["celery>=5.3", "redis>=5"]
+db = ["sqlalchemy>=2", "psycopg2-binary>=2.9"]
+dev = ["pytest>=8", "ruff>=0.4"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
