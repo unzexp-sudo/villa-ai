@@ -59,6 +59,8 @@ _LABEL_MAP: dict[str, RoomType] = {
     "bathroom": RoomType.BATHROOM,
     "wc": RoomType.BATHROOM,
     "toilet": RoomType.BATHROOM,
+    "lavatory": RoomType.BATHROOM,
+    "powder": RoomType.BATHROOM,
     "shower": RoomType.BATHROOM,
     "kitchen": RoomType.KITCHEN,
     "kit": RoomType.KITCHEN,
@@ -68,6 +70,7 @@ _LABEL_MAP: dict[str, RoomType] = {
     "dining": RoomType.DINING,
     "utility": RoomType.UTILITY,
     "laundry": RoomType.UTILITY,
+    "wash": RoomType.UTILITY,
     "store": RoomType.UTILITY,
     "hall": RoomType.HALL,
     "corridor": RoomType.HALL,
@@ -75,17 +78,24 @@ _LABEL_MAP: dict[str, RoomType] = {
     "terrace": RoomType.BALCONY,
     "garage": RoomType.GARAGE,
     "carport": RoomType.GARAGE,
+    "room": RoomType.OTHER,
 }
 
 _FIXTURE_HINTS = {
     "WC": FixtureKind.WC,
     "TOILET": FixtureKind.WC,
+    "LAVATORY": FixtureKind.BASIN,
     "BASIN": FixtureKind.BASIN,
     "SINK": FixtureKind.SINK,
+    "TAP": FixtureKind.BASIN,
+    "FAUCET": FixtureKind.BASIN,
+    "MIXER": FixtureKind.BASIN,
     "SHOWER": FixtureKind.SHOWER,
     "BATH": FixtureKind.BATH,
     "WASHING": FixtureKind.WASHING_MACHINE,
+    "LAUNDRY": FixtureKind.WASHING_MACHINE,
     "DRAIN": FixtureKind.FLOOR_DRAIN,
+    "FLOOR DRAIN": FixtureKind.FLOOR_DRAIN,
 }
 
 _FIXTURE_UNITS: dict[FixtureKind, float] = {
@@ -914,59 +924,134 @@ def calibrate_scale(model: BuildingModel, p1: Point2D, p2: Point2D,
     return out
 
 
-def _ocr_room_names(img, room_regions: list[list[tuple[int, int]]]) -> list[str]:
-    """Best-effort OCR for room titles from a plan image.
+def _normalise_room_label(raw: str) -> str:
+    """Normalise OCR text so room labels and fixture markers read consistently."""
+    cleaned = re.sub(r"\s+", " ", (raw or "").strip())
+    cleaned = cleaned.replace("_", " ")
+    cleaned = cleaned.replace("-", " ")
+    cleaned = cleaned.replace("|", " ")
+    cleaned = cleaned.replace("•", " ")
+    cleaned = cleaned.replace("0", "O")
+    cleaned = cleaned.replace("1", "I")
+    cleaned = cleaned.replace("5", "S")
+    cleaned = cleaned.replace("7", "T")
+    cleaned = cleaned.replace("8", "B")
+    cleaned = re.sub(r"[^A-Za-z0-9 /&]", "", cleaned)
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    return cleaned or "Room"
 
-    OCR is applied to each room crop, not to the whole page, so labels remain
-    attached to their surrounding region rather than being confused with the
-    drawing's other text or dimension annotations.
-    """
+
+def _best_room_name_from_text(raw: str) -> str:
+    """Pick the most likely room label from noisy OCR output."""
+    cleaned = _normalise_room_label(raw)
+    if not cleaned or cleaned == "Room":
+        return "Room"
+
+    tokens = cleaned.upper().split()
+    for keyword in ["BEDROOM", "BATHROOM", "KITCHEN", "LIVING", "DINING",
+                    "UTILITY", "LAUNDRY", "WASH", "HALL", "CORRIDOR",
+                    "BALCONY", "TERRACE", "GARAGE", "ROOM",
+                    "WC", "TOILET", "SHOWER", "BASIN", "SINK"]:
+        if keyword in tokens:
+            if keyword in {"ROOM", "WC", "TOILET", "SHOWER", "BASIN", "SINK"}:
+                return keyword.title()
+            return keyword.title()
+
+    if any(token in {"BATH", "WC", "TOILET", "KITCHEN", "LIVING", "BED"} for token in tokens):
+        match = next(token for token in tokens if token in {"BATH", "WC", "TOILET", "KITCHEN", "LIVING", "BED"})
+        return match.title()
+
+    if "ROOM" in cleaned.upper():
+        return "Room"
+    return cleaned
+
+
+def _candidate_room_names(raw: str) -> list[str]:
+    """Return ordered candidate labels from OCR so the strongest room match wins."""
+    if not raw:
+        return []
+    cleaned = _normalise_room_label(raw)
+    if not cleaned or cleaned == "Room":
+        return ["Room"]
+
+    # Keep the full label and a reduced token form so the strongest keyword is surfaced.
+    pieces = [cleaned]
+    for token in re.split(r"\s+", cleaned):
+        if len(token) > 2:
+            pieces.append(token)
+    return pieces
+
+
+def _fixture_kind(label: str) -> FixtureKind | None:
+    up = label.upper()
+    for key, kind in _FIXTURE_HINTS.items():
+        if key in up:
+            return kind
+    return None
+
+
+def _run_ocr_variants(img, crop_box) -> list[str]:
+    """Try several OCR modes for small plan labels to reduce false text like 'mooЯ'."""
     try:
         import pytesseract
     except Exception:
-        return ["Room"] * len(room_regions)
-
-    if not room_regions:
         return []
 
     try:
         from PIL import Image, ImageFilter
     except Exception:
-        return ["Room"] * len(room_regions)
+        return []
 
-    def _clean_label(raw: str) -> str:
-        cleaned = re.sub(r"\s+", " ", (raw or "").strip())
-        cleaned = re.sub(r"[^A-Za-z0-9/ &-]", "", cleaned)
-        return cleaned.strip() or "Room"
-
-    labels: list[str] = []
-    width, height = img.size
-    for region in room_regions:
-        xs = [p[0] for p in region]
-        ys = [p[1] for p in region]
-        if not xs or not ys:
-            labels.append("Room")
-            continue
-        x0 = max(0, min(xs) - 8)
-        y0 = max(0, min(ys) - 8)
-        x1 = min(width, max(xs) + 8)
-        y1 = min(height, max(ys) + 8)
-        crop = img.crop((x0, y0, x1, y1))
-        gray = crop.convert("L")
-        bw = gray.point(lambda p: 255 if p > 180 else 0)
+    crop = img.crop(crop_box)
+    candidates: list[str] = []
+    variants = []
+    gray = crop.convert("L")
+    for thresh in (160, 180, 200):
+        bw = gray.point(lambda p: 255 if p > thresh else 0)
         bw = bw.filter(ImageFilter.MedianFilter())
-        try:
-            text = pytesseract.image_to_string(
-                bw,
-                config="--psm 10 --oem 3",
-            )
-        except Exception:
-            labels.append("Room")
-            continue
-        cleaned = _clean_label(text)
-        labels.append(cleaned)
+        variants.append(bw)
+    variants.append(gray)
+    variants.append(gray.transpose(Image.FLIP_LEFT_RIGHT))
 
-    return labels
+    for variant in variants:
+        for psm in (7, 6, 10, 11):
+            try:
+                text = pytesseract.image_to_string(variant, config=f"--psm {psm} --oem 3")
+            except Exception:
+                continue
+            if text and text.strip():
+                candidates.append(text)
+    return candidates
+
+
+def _room_name_from_ocr_candidates(candidates: list[str]) -> str:
+    """Choose the best room label from OCR text candidates."""
+    best = "Room"
+    best_score = -1
+    seen: set[str] = set()
+    for raw in candidates:
+        cleaned = _normalise_room_label(raw)
+        if not cleaned or cleaned == "Room":
+            continue
+        if cleaned.upper() in seen:
+            continue
+        seen.add(cleaned.upper())
+        score = 0
+        for keyword in ["BEDROOM", "BATHROOM", "KITCHEN", "LIVING", "DINING",
+                        "UTILITY", "LAUNDRY", "HALL", "CORRIDOR",
+                        "BALCONY", "TERRACE", "GARAGE", "TOILET", "WC",
+                        "SHOWER", "BASIN", "SINK"]:
+            if keyword in cleaned.upper():
+                score += 10
+        if "ROOM" in cleaned.upper():
+            score += 1
+        if score > best_score:
+            best_score = score
+            best = cleaned
+    if best_score < 0:
+        return "Room"
+    normalized = _best_room_name_from_text(best)
+    return normalized if normalized != "Room" else best
 
 
 def _infer_fixtures_for_label(label: str) -> list[tuple[FixtureKind, dict[str, float]]]:
@@ -980,20 +1065,20 @@ def _infer_fixtures_for_label(label: str) -> list[tuple[FixtureKind, dict[str, f
     if not cleaned:
         return []
 
-    normalized = cleaned.upper()
+    normalized = _normalise_room_label(cleaned).upper()
     out: list[tuple[FixtureKind, dict[str, float]]] = []
 
     if "WC" in normalized or "TOILET" in normalized:
         out.append((FixtureKind.WC, {"fixture_units": _FIXTURE_UNITS[FixtureKind.WC]}))
-    if "BASIN" in normalized or "LAVATORY" in normalized or "SINK" in normalized:
+    if "BASIN" in normalized or "LAVATORY" in normalized or "SINK" in normalized or "TAP" in normalized or "FAUCET" in normalized or "MIXER" in normalized:
         out.append((FixtureKind.BASIN, {"fixture_units": _FIXTURE_UNITS[FixtureKind.BASIN]}))
     if "SHOWER" in normalized:
         out.append((FixtureKind.SHOWER, {"fixture_units": _FIXTURE_UNITS[FixtureKind.SHOWER]}))
     if "BATH" in normalized:
         out.append((FixtureKind.BATH, {"fixture_units": _FIXTURE_UNITS[FixtureKind.BATH]}))
-    if "KITCHEN" in normalized and ("SINK" in normalized or "KITCHEN" in normalized):
+    if "KITCHEN" in normalized and ("SINK" in normalized or "TAP" in normalized or "FAUCET" in normalized or "MIXER" in normalized):
         out.append((FixtureKind.KITCHEN_SINK, {"fixture_units": _FIXTURE_UNITS[FixtureKind.KITCHEN_SINK]}))
-    if "LAUNDRY" in normalized or "WASHING" in normalized:
+    if "LAUNDRY" in normalized or "WASHING" in normalized or "WASH" in normalized:
         out.append((FixtureKind.WASHING_MACHINE, {"fixture_units": _FIXTURE_UNITS[FixtureKind.WASHING_MACHINE]}))
     if "DRAIN" in normalized and "FLOOR" in normalized:
         out.append((FixtureKind.FLOOR_DRAIN, {"fixture_units": _FIXTURE_UNITS[FixtureKind.FLOOR_DRAIN]}))
@@ -1018,6 +1103,49 @@ def _infer_fixtures_for_label(label: str) -> list[tuple[FixtureKind, dict[str, f
         seen.add(kind)
         deduped.append((kind, props))
     return deduped
+
+
+def _ocr_room_names(img, room_regions: list[list[tuple[int, int]]]) -> list[str]:
+    """Best-effort OCR for room titles from a plan image.
+
+    OCR is applied to each room crop, not to the whole page, so labels remain
+    attached to their surrounding region rather than being confused with the
+    drawing's other text or dimension annotations.
+    """
+    try:
+        import pytesseract
+    except Exception:
+        return ["Room"] * len(room_regions)
+
+    if not room_regions:
+        return []
+
+    try:
+        from PIL import Image, ImageFilter
+    except Exception:
+        return ["Room"] * len(room_regions)
+
+    labels: list[str] = []
+    width, height = img.size
+    for region in room_regions:
+        xs = [p[0] for p in region]
+        ys = [p[1] for p in region]
+        if not xs or not ys:
+            labels.append("Room")
+            continue
+        x0 = max(0, min(xs) - 10)
+        y0 = max(0, min(ys) - 10)
+        x1 = min(width, max(xs) + 10)
+        y1 = min(height, max(ys) + 10)
+        crop_box = (x0, y0, x1, y1)
+        candidates = _run_ocr_variants(img, crop_box)
+        if not candidates:
+            labels.append("Room")
+            continue
+
+        best = _room_name_from_ocr_candidates(candidates)
+        labels.append(best)
+    return labels
 
 
 __all__ = ["ParseError", "UnsupportedFormat", "parse_upload", "parse_dxf",
