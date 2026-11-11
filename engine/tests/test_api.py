@@ -12,12 +12,15 @@ easy to get wrong and invisible in a unit test:
 
 from __future__ import annotations
 
+import asyncio
 import json
 import time
 
 import pytest
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
+from app.api import routes as api_routes
 from app.core.config import settings
 
 
@@ -130,6 +133,47 @@ def test_upload_accepts_a_real_dxf(client):
                       files={"file": ("plan.dxf", buf.getvalue().encode(), "application/dxf")})
     assert res.status_code == 200, res.text
     assert len(res.json()["levels"][0]["walls"]) == 4
+
+
+def test_upload_create_saves_a_new_model_from_dxf(client):
+    import io
+
+    import ezdxf
+
+    doc = ezdxf.new("R2013")
+    msp = doc.modelspace()
+    for a, b in [((0, 0), (8, 0)), ((8, 0), (8, 6)), ((8, 6), (0, 6)), ((0, 6), (0, 0))]:
+        msp.add_line(a, b)
+    buf = io.StringIO()
+    doc.write(buf)
+
+    res = client.post("/api/models/upload",
+                      files={"file": ("new-plan.dxf", buf.getvalue().encode(), "application/dxf")})
+    assert res.status_code == 200, res.text
+    uploaded = res.json()
+    assert uploaded["id"].startswith("mdl-")
+    assert len(uploaded["levels"][0]["walls"]) == 4
+    assert client.get(f"/api/models/{uploaded['id']}").json()["id"] == uploaded["id"]
+
+
+def test_one_step_upload_rejects_empty_or_unsupported_files(client):
+    empty = client.post("/api/models/upload", files={"file": ("empty.pdf", b"", "application/pdf")})
+    assert empty.status_code == 422
+
+    unsupported = client.post("/api/models/upload", files={"file": ("plan.dwg", b"DWG", "application/octet-stream")})
+    assert unsupported.status_code == 422
+
+
+def test_plan_upload_is_bounded(monkeypatch):
+    class TooLargeUpload:
+        async def read(self, size):
+            assert size == 5
+            return b"12345"
+
+    monkeypatch.setattr(api_routes, "_MAX_UPLOAD_BYTES", 4)
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(api_routes._read_plan_upload(TooLargeUpload()))
+    assert exc.value.status_code == 413
 
 
 # ---- the run, the stream, the exports ------------------------------------

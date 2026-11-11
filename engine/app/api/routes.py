@@ -23,6 +23,17 @@ from pydantic import BaseModel
 router = APIRouter()
 
 _FIXTURES = Path(__file__).resolve().parents[2] / "fixtures"
+_MAX_UPLOAD_BYTES = 20 * 1024 * 1024
+
+
+async def _read_plan_upload(file: UploadFile) -> bytes:
+    """Read a bounded plan upload so one request cannot consume unbounded RAM."""
+    blob = await file.read(_MAX_UPLOAD_BYTES + 1)
+    if len(blob) > _MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="file exceeds the 20 MB upload limit")
+    if not blob:
+        raise HTTPException(status_code=422, detail="the file is empty")
+    return blob
 
 
 class RunIn(BaseModel):
@@ -139,14 +150,32 @@ def calibrate(model_id: str, body: ScaleIn):
     return out
 
 
+@router.post("/models/upload")
+async def upload_create(file: UploadFile = File(...)):
+    """Create a model directly from an uploaded file.
+
+    This is the one-step path: the file is parsed into a BuildingModel, saved
+    with a fresh id, and returned. The two-step path (create a bare model then
+    POST to /models/{id}/upload) is kept for the case where a model already
+    exists and the user is replacing its geometry.
+    """
+    from app.intake.parse import ParseError, parse_upload
+
+    blob = await _read_plan_upload(file)
+    try:
+        parsed = parse_upload(file.filename or "", blob)
+    except ParseError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    _store().save_model(parsed)
+    return parsed
+
+
 @router.post("/models/{model_id}/upload")
 async def upload(model_id: str, file: UploadFile = File(...)):
     """Parse an upload into the existing model's id, keeping the same handle."""
     from app.intake.parse import ParseError, parse_upload
 
-    blob = await file.read()
-    if not blob:
-        raise HTTPException(status_code=422, detail="the file is empty")
+    blob = await _read_plan_upload(file)
     try:
         parsed = parse_upload(file.filename or "", blob)
     except ParseError as exc:

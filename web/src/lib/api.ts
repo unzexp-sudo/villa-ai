@@ -120,6 +120,22 @@ export const api = {
       body: JSON.stringify({ p1, p2, distance_m }),
     }),
 
+  /** One-step upload: create a model directly from a file. */
+  uploadCreate: async (file: File): Promise<BuildingModel> => {
+    const form = new FormData();
+    form.append("file", file);
+    const res = await fetch(`${API_BASE}/api/models/upload`, {
+      method: "POST",
+      body: form,
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(typeof body.detail === "string" ? body.detail : "upload failed");
+    }
+    return (await res.json()) as BuildingModel;
+  },
+
+  /** Two-step upload: replace geometry on an existing model id. */
   upload: async (id: string, file: File): Promise<BuildingModel> => {
     const form = new FormData();
     form.append("file", file);

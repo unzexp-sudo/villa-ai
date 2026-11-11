@@ -27,6 +27,7 @@ import { Viewer3D } from "./Viewer3D";
 import { GapCards, currentDragId } from "./GapCards";
 import { Results } from "./Results";
 import { LeadForm } from "./LeadForm";
+import { UploadBox } from "./UploadBox";
 import "./studio.css";
 
 type Stage = "pick" | "confirm" | "running" | "result";
@@ -228,11 +229,6 @@ export default function Studio() {
 
       {stage === "pick" && (
         <section className="pick">
-          {!hasToken && (
-            <div className="lead-gate card">
-              <LeadForm onDone={() => setHasToken(true)} />
-            </div>
-          )}
           <header>
             <p className="eyebrow">Step 1 · choose a plan</p>
             <h1>Design all MEP for one plan. Five agents, one system each.</h1>
@@ -242,22 +238,48 @@ export default function Studio() {
               calibrated before design runs.
             </p>
           </header>
-          <div className="sample-row">
-            {[
-              { slug: "villa_120", title: "Villa · 120 m²", note: "3 bed, 2 bath, wet core" },
-              { slug: "apartment_85", title: "Apartment · 85 m²", note: "2 bed, sprinklers on" },
-              { slug: "villa_minimal", title: "Villa · sparse plan", note: "shows the gap prompts" },
-            ].map((s) => (
-              <button
-                key={s.slug}
-                className="sample-card"
-                disabled={busy}
-                onClick={() => void sample(s.slug)}
-              >
-                <strong>{s.title}</strong>
-                <span className="muted small">{s.note}</span>
-              </button>
-            ))}
+
+          <div className={hasToken ? "pick-body" : "pick-body with-gate"}>
+            {!hasToken && (
+              <aside className="lead-gate card">
+                <LeadForm onDone={() => setHasToken(true)} />
+              </aside>
+            )}
+
+            <div className="pick-plans">
+              <div className="sample-row">
+                {[
+                  { slug: "villa_120", title: "Villa · 120 m²", note: "3 bed, 2 bath, wet core" },
+                  { slug: "apartment_85", title: "Apartment · 85 m²", note: "2 bed, sprinklers on" },
+                  { slug: "villa_minimal", title: "Villa · sparse plan", note: "shows the gap prompts" },
+                ].map((s) => (
+                  <button
+                    key={s.slug}
+                    className="sample-card"
+                    disabled={busy}
+                    onClick={() => void sample(s.slug)}
+                  >
+                    <strong>{s.title}</strong>
+                    <span className="muted small">{s.note}</span>
+                  </button>
+                ))}
+              </div>
+
+              <div className="pick-upload card">
+                <p className="eyebrow">Or bring your own plan</p>
+                <p className="muted small">
+                  DXF gives exact geometry. PDF and PNG/JPG are vectorised or edge-detected.
+                  DWG needs to be converted to DXF first.
+                </p>
+                <UploadBox onUploaded={(m) => {
+                  setModel(m);
+                  void api.gaps(m.id).then((g) => {
+                    setGaps(g.items);
+                    setStage("confirm");
+                  });
+                }} />
+              </div>
+            </div>
           </div>
         </section>
       )}
@@ -366,12 +388,14 @@ export default function Studio() {
 }
 
 function codeRefFor(s: SystemKind): string {
+  // Verified standard references (full numbers confirmed via web search).
+  // Numeric thresholds remain starting points for a local engineer.
   const map: Record<SystemKind, string> = {
-    drainage: "SNI 03-6481",
-    water: "SNI 03-6481",
-    air: "SNI 03-6572",
-    power: "PUIL 2011",
-    fire: "SNI 03-3989",
+    drainage: "SNI 03-6481-2000",
+    water: "SNI 03-6481-2000",
+    air: "SNI 03-6572-2001",
+    power: "SNI 0225:2011 (PUIL 2011)",
+    fire: "SNI 03-3989-2000",
   };
   return map[s];
 }
