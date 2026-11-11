@@ -86,17 +86,22 @@ export default function Studio() {
 
   useEffect(() => {
     api.health().then(() => setEngineUp(true)).catch(() => setEngineUp(false));
-    // Restore a previously saved model so switching tabs does not lose work.
-    const saved = session.getActiveModel();
-    if (saved) {
-      setModel(saved);
-      // If we have a saved model, jump straight to confirm stage.
-      void loadGaps(saved).then(() => {
-        setStage("confirm");
-      }).catch(() => {
-        // Model may have been purged server-side; stay on pick.
-        session.clearActiveModel();
-      });
+    // Restore a previously saved model only when the user explicitly resumes a
+    // session. A normal app reload should start fresh and never revive a stale
+    // model from localStorage; otherwise the last uploaded plan keeps appearing
+    // even after a hard refresh.
+    const params = new URLSearchParams(window.location.search);
+    const resume = params.get("resume") === "1";
+    if (resume) {
+      const saved = session.getActiveModel();
+      if (saved) {
+        setModel(saved);
+        void loadGaps(saved).then(() => {
+          setStage("confirm");
+        }).catch(() => {
+          session.clearActiveModel();
+        });
+      }
     }
     return () => {
       if (streamRef.current) streamRef.current.close();

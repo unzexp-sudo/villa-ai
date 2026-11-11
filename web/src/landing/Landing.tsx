@@ -36,6 +36,11 @@ export default function Landing() {
     window.location.assign("/app");
   };
 
+  const resumeSession = () => {
+    session.getActiveModel();
+    window.location.assign("/app?resume=1");
+  };
+
   return (
     <main className="landing">
       <section className="hero">
@@ -57,6 +62,9 @@ export default function Landing() {
           </a>
           <button type="button" className="btn ghost" onClick={resetSession}>
             Start fresh
+          </button>
+          <button type="button" className="btn ghost" onClick={resumeSession}>
+            Resume last session
           </button>
           <a className="btn ghost" href="/interior">
             See the 3D walkthrough
