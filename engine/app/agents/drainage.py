@@ -29,7 +29,7 @@ class DrainageAgent(SpecialistAgent):
             f"slope {slope:.1f}%",
             "soil + waste + vent to stack; sewer OR septic endpoint (both considered)",
             f"cleanouts every ≤{cleanout:.0f} m; max gravity run {maxrun:.1f} m",
-            f"gravity fall 1–2% (design {slope:.1f}%); SE Asia: PVC-U in ceiling void",
+            f"gravity fall 1–2% (design {slope:.1f}%); SE Asia: PVC-U underfloor / below slab",
         ]
 
 

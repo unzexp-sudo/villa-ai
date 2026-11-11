@@ -1,5 +1,6 @@
 import { useEffect, useState, type ChangeEvent } from "react";
 import { fetchInteriorScene } from "./api";
+import { session } from "../lib/session";
 import type { InteriorScene, ViewMode } from "./types";
 import Viewer3D from "./Viewer3D";
 import "./interior.css";
@@ -31,7 +32,10 @@ export default function Interior() {
   useEffect(() => {
     let cancelled = false;
     setLoad({ loading: true, error: null, scene: null });
-    fetchInteriorScene()
+    // Use the active uploaded/sampled model if one exists in session;
+    // otherwise fall back to the bundled sample fixture.
+    const activeModelId = session.getActiveModelId();
+    fetchInteriorScene(activeModelId ?? undefined)
       .then((scene) => {
         if (cancelled) return;
         setLoad({ loading: false, error: null, scene });
@@ -202,6 +206,12 @@ export default function Interior() {
               {scene.name} &middot; {scene.model_id}
             </span>
           </div>
+          {session.getActiveModelId() && (
+            <p className="int-muted small" style={{ marginTop: 4 }}>
+              Showing your uploaded plan.{" "}
+              <a href="/app" className="int-back">&larr; Back to MEP studio</a>
+            </p>
+          )}
         </main>
       )}
     </div>

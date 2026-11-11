@@ -50,6 +50,8 @@ export function Viewer3D({ model, layers, clash }: Props) {
           // camera orbits that point rather than a plan coordinate.
           position: [centre.r * 0.75, centre.r * 0.85, centre.r * 0.95],
           fov: 42,
+          near: 0.05,
+          far: 5000,
         }}
         style={{ background: "#a8c8d8" }}
         dpr={[1, 1.6]}
@@ -79,8 +81,8 @@ export function Viewer3D({ model, layers, clash }: Props) {
           makeDefault
           target={[0, 1.2, 0]}
           enablePan
-          minDistance={2}
-          maxDistance={60}
+          minDistance={0.5}
+          maxDistance={200}
           maxPolarAngle={Math.PI / 2.05}
         />
       </Canvas>

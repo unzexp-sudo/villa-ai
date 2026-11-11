@@ -378,12 +378,19 @@ def _targets(system, model):
         fs = list(fixtures)
         if fs:
             for f in fs:
+                # Cold branch to every fixture.
                 out.append((Point2D(x=f.at.x, y=f.at.y),
                             {"fixture_units": float(f.props.get("fixture_units", 2.0)),
-                             "fixture_id": f.id}, None))
+                             "fixture_id": f.id, "service": "cold"}, None))
+                # Hot branch only to fixtures that need hot water.
+                k = kind_str(f)
+                if k in {"basin", "shower", "bath", "kitchen_sink", "sink"}:
+                    out.append((Point2D(x=f.at.x, y=f.at.y),
+                                {"fixture_units": float(f.props.get("fixture_units", 2.0)),
+                                 "fixture_id": f.id, "service": "hot"}, None))
         else:
             for r in (wet or rooms):
-                out.append((_room_center(r), {"fixture_units": 2.0}, None))
+                out.append((_room_center(r), {"fixture_units": 2.0, "service": "cold"}, None))
     elif system == SystemKind.AIR:
         for r in rooms:
             flow = exhaust_rate_lps(r.type) if r.wet else 25.0
@@ -426,8 +433,11 @@ def _make_segment(system, seg_id, pts3d, role, ctx) -> Segment:
         meta.update(s)
     elif system == SystemKind.WATER:
         s = size_water(ctx.get("fixture_units", 2.0), length)
-        diameter_mm, material = s["diameter_mm"], "PEX"
+        diameter_mm = s["diameter_mm"]
+        service = ctx.get("service", "cold")
+        material = "PEX-RT (insulated)" if service == "hot" else "PEX"
         meta.update(s)
+        meta["service"] = service
     elif system == SystemKind.AIR:
         s = size_duct(ctx.get("flow_lps", 50.0))
         width_mm, height_mm, material = s["width_mm"], s["height_mm"], "galv. steel"

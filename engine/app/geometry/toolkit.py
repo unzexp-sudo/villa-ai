@@ -46,15 +46,19 @@ __all__ = [
 ]
 
 # Design centreline heights for candidate #0 (the default/best). Each value
-# lies INSIDE that system's soft DEFAULT_BANDS; several systems deliberately
-# share overlapping heights (drainage & power both 2.70) so crossing trunks
-# are also close in 3D -> real clashes for the before/after demo. We do NOT
-# segregate systems into non-overlapping bands.
+# lies INSIDE that system's soft DEFAULT_BANDS.
+#
+# Research-based vertical zoning:
+# - Drainage routed UNDERFLOOR at z=0.30 (gravity fall to sewer outlet).
+# - Water in ceiling void at z=2.55 (pressurised, drops to fixtures).
+# - Air slightly below water at z=2.42 (tight clearance for clash demo).
+# - Power above water at z=2.68 (flexible conduit, least constraint).
+# - Fire highest at z=2.95 (sprinkler head clearance).
 _DESIGN_Z = {
-    SystemKind.DRAINAGE: 2.70,
+    SystemKind.DRAINAGE: 0.30,
     SystemKind.WATER: 2.55,
-    SystemKind.AIR: 2.30,
-    SystemKind.POWER: 2.70,
+    SystemKind.AIR: 2.42,
+    SystemKind.POWER: 2.68,
     SystemKind.FIRE: 2.95,
 }
 

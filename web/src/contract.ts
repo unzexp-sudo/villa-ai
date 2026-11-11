@@ -253,9 +253,9 @@ export function modelBBox(model: BuildingModel): [number, number, number, number
 }
 
 export const DEFAULT_BANDS: Readonly<Record<SystemKind, readonly [number, number]>> = {
-  drainage: [2.55, 2.95],
-  water: [2.3, 2.6],
-  air: [2.05, 2.35],
-  power: [2.6, 2.9],
+  drainage: [0.15, 0.45],
+  water: [2.45, 2.65],
+  air: [2.35, 2.5],
+  power: [2.6, 2.75],
   fire: [2.9, 3.1],
 } as const;

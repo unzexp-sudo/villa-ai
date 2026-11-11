@@ -19,6 +19,7 @@ import {
 } from "../contract";
 import { level0 } from "../contract";
 import { api, lead } from "../lib/api";
+import { session } from "../lib/session";
 import { streamRun, type StreamHandle } from "../lib/sse";
 import { PlanCanvas } from "./PlanCanvas";
 import { AgentPanel } from "./AgentPanel";
@@ -62,8 +63,27 @@ export default function Studio() {
   const [hasToken, setHasToken] = useState<boolean>(!!lead.getToken());
   const streamRef = useRef<StreamHandle | null>(null);
 
+  // Persist model to localStorage so tab switches and the Interior 3D page
+  // can access it without re-uploading.
+  useEffect(() => {
+    if (model) session.setActiveModel(model);
+  }, [model]);
+
   useEffect(() => {
     api.health().then(() => setEngineUp(true)).catch(() => setEngineUp(false));
+    // Restore a previously saved model so switching tabs does not lose work.
+    const saved = session.getActiveModel();
+    if (saved) {
+      setModel(saved);
+      // If we have a saved model, jump straight to confirm stage.
+      void api.gaps(saved.id).then((g) => {
+        setGaps(g.items);
+        setStage("confirm");
+      }).catch(() => {
+        // Model may have been purged server-side; stay on pick.
+        session.clearActiveModel();
+      });
+    }
     return () => {
       if (streamRef.current) streamRef.current.close();
     };

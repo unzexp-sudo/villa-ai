@@ -126,11 +126,20 @@ OVERLAY_COLORS: dict[str, str] = {
 
 # Default preferred height bands, in metres (centreline z). Soft hints for
 # scoring only in v1 -- they do NOT forbid a route (MODULE_CONTRACT.md §1).
+#
+# Research-based vertical zoning:
+# - Drainage: UNDERFLOOR / below slab. Gravity-led; needs continuous fall
+#   to the sewer/septic outlet. Routing it in the ceiling was wrong.
+# - Water: ceiling void. Pressurised supply; runs overhead and drops to
+#   fixtures. Cold and hot share the same band but are separate branches.
+# - Air: ceiling void, slightly below water to avoid crossing.
+# - Power: ceiling void, above water (conduit flex, least constraint).
+# - Fire: highest, near structural soffit (sprinkler head clearance).
 DEFAULT_BANDS: dict[SystemKind, tuple[float, float]] = {
-    SystemKind.DRAINAGE: (2.55, 2.95),
-    SystemKind.WATER: (2.30, 2.60),
-    SystemKind.AIR: (2.05, 2.35),
-    SystemKind.POWER: (2.60, 2.90),
+    SystemKind.DRAINAGE: (0.15, 0.45),
+    SystemKind.WATER: (2.45, 2.65),
+    SystemKind.AIR: (2.35, 2.50),
+    SystemKind.POWER: (2.60, 2.75),
     SystemKind.FIRE: (2.90, 3.10),
 }
 

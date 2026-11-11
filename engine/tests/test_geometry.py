@@ -245,16 +245,26 @@ def test_integration_default_layers_have_real_xy_crossings(sample_model):
     assert crossings >= 2, f"expected real merge clashes, got {crossings}"
 
 
-def test_default_z_bands_overlap_not_segregated(sample_model):
-    """The five defaults must share overlapping z (a real clash-demo delta),
-    not sit in disjoint non-overlapping bands.
+def test_default_z_bands_research_based_separation(sample_model):
+    """Default z values follow research-based vertical zoning:
+    - Drainage is underfloor (z < 1.0) for gravity fall.
+    - Water, air, power, fire are in the ceiling void (z > 2.0).
+    - Ceiling-void systems have overlapping bands so real 3D clashes
+      still occur for the before/after demo.
     """
     zs = {}
     for sk in SYSTEM_ORDER:
         best = list(build_candidates(sk, sample_model, _Strategy(),
                                      _Limits(1), seed=42))[0]
         zs[sk] = best.metrics["z_m"]
-    # drainage and power deliberately coincide; overall spread is < 1 m and
-    # the drainage/water/air/power/fire bands overlap by contract.
-    assert zs[SystemKind.DRAINAGE] == zs[SystemKind.POWER]
-    assert max(zs.values()) - min(zs.values()) < 1.0
+    # Drainage must be low (underfloor).
+    assert zs[SystemKind.DRAINAGE] < 1.0
+    # All other systems in ceiling void.
+    for sk in (SystemKind.WATER, SystemKind.AIR, SystemKind.POWER, SystemKind.FIRE):
+        assert zs[sk] > 2.0
+    # Drainage must not equal any ceiling system.
+    assert zs[SystemKind.DRAINAGE] != zs[SystemKind.POWER]
+    # Ceiling-void systems still overlap enough for clash demo.
+    ceiling_zs = [zs[sk] for sk in (SystemKind.WATER, SystemKind.AIR,
+                                     SystemKind.POWER, SystemKind.FIRE)]
+    assert max(ceiling_zs) - min(ceiling_zs) < 1.0

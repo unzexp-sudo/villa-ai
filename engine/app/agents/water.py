@@ -34,7 +34,7 @@ class WaterAgent(SpecialistAgent):
         return [
             f"{stats['total_length_m']:.1f} m {stats['material']} · "
             f"{fu:.0f} fixture units · Ø{dia:.0f} mm",
-            f"cold + hot; demand ~{demand:.0f} L/min; hot-water wait ~{wait:.0f} s",
+            f"cold + hot branches; demand ~{demand:.0f} L/min; hot-water wait ~{wait:.0f} s",
             "roof tank OR ground tank + pump; local electric/solar heaters",
             f"velocity ≤10 m/s (max {vmax:.1f} m/s); SE Asia: point-of-use heaters, {recirc}",
         ]
