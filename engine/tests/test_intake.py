@@ -140,6 +140,139 @@ def test_raster_image_with_lines_is_parsed():
     assert len(model.level0.walls) > 0, "image with clear lines must yield walls"
 
 
+def _drawn_plan_png(scale: float = 2.0) -> bytes:
+    """A synthetic plan the reader must read EXACTLY, drawn at ``scale``.
+
+    Three rooms, so the layout is not symmetric in either axis: a full-height
+    partition and a second partition on the left only, high in the drawing. That
+    asymmetry is the point — a reader that forgets to flip y puts the small room
+    at the bottom, and a reader that invents walls puts them through the
+    furniture. ``scale`` re-renders the same plan at another resolution.
+
+    Deliberately included, and deliberately NOT walls:
+
+    * a wardrobe (four hairline strokes) inside the lower-left room,
+    * a patch of hatching (eleven hairline strokes) in the right-hand room,
+    * a dimension line with end ticks, a title and a logo, outside the building.
+    """
+    import io as _io
+
+    from PIL import Image, ImageDraw
+
+    k = scale
+    img = Image.new("L", (int(400 * k), int(300 * k)), 255)
+    draw = ImageDraw.Draw(img)
+
+    def line(*pts, width=3):
+        draw.line([(x * k, y * k) for x, y in pts], fill=0,
+                  width=max(1, round(width * k)))
+
+    # Building outline and partitions (drawn walls).
+    line((38, 40), (362, 40))
+    line((360, 38), (360, 262))
+    line((362, 260), (38, 260))
+    line((40, 262), (40, 38))
+    line((200, 38), (200, 262))
+    line((38, 110), (202, 110))
+
+    # Furniture: four hairlines, touching no wall.
+    line((60, 150), (120, 150), width=1)
+    line((120, 150), (120, 210), width=1)
+    line((120, 210), (60, 210), width=1)
+    line((60, 210), (60, 150), width=1)
+
+    # Hatching: parallel hairlines, 20 px clear of every wall.
+    for x in range(220, 350, 12):
+        line((x, 60), (x, 240), width=1)
+
+    # Sheet annotations, outside the building.
+    line((40, 20), (360, 20), width=1)
+    line((40, 14), (40, 26), width=1)
+    line((360, 14), (360, 26), width=1)
+    draw.text((150 * k, 6 * k), "PLAN 1:100", fill=0)
+    draw.ellipse([(368 * k, 268 * k), (392 * k, 292 * k)], outline=0, width=2)
+
+    buf = _io.BytesIO()
+    img.save(buf, format="PNG")
+    return buf.getvalue()
+
+
+def _bbox(walls) -> tuple[float, float, float, float]:
+    xs = [c for w in walls for c in (w.start.x, w.end.x)]
+    ys = [c for w in walls for c in (w.start.y, w.end.y)]
+    return min(xs), min(ys), max(xs), max(ys)
+
+
+def test_raster_plan_reads_the_drawn_walls_only():
+    """Six drawn walls, three rooms — furniture, hatching and notes are not walls.
+
+    This is the regression that matters most for uploads: a bed or a hatch patch
+    traced as walls turns one bedroom into five, and a dimension line traced as
+    a wall makes the building bigger than the drawing.
+    """
+    model = parse_upload("plan.png", _drawn_plan_png(2.0))
+    walls = model.level0.walls
+    assert len(walls) == 6, [(w.start.x, w.start.y, w.end.x, w.end.y) for w in walls]
+
+    rooms = model.level0.rooms
+    assert len(rooms) == 3, [(r.name, r.area_m2) for r in rooms]
+    assert all(r.area_m2 > 15 for r in rooms), \
+        f"a room this small is furniture or hatching: {[r.area_m2 for r in rooms]}"
+
+    # The sheet annotation must not move the footprint: the bounding box is the
+    # drawn building, nothing outside it.
+    x0, y0, x1, y1 = _bbox(walls)
+    assert abs(x1 - x0 - 14.0) < 0.2, "footprint width should be the assumed span"
+    assert 9.4 < y1 - y0 < 9.9, f"footprint depth {y1 - y0:.2f} is not the drawn 320x220"
+
+
+def test_raster_plan_is_not_mirrored():
+    """Pixels count y down; the model must count y up.
+
+    The left-hand partition sits high in the drawing, so the SMALL room is the
+    upper one. Without the flip the same reading comes out top-to-bottom
+    mirrored — a different building, and one the user cannot fix except by
+    redrawing.
+    """
+    model = parse_upload("plan.png", _drawn_plan_png(2.0))
+    rooms = model.level0.rooms
+    assert len(rooms) == 3
+
+    ys = [(min(p.y for p in r.polygon), max(p.y for p in r.polygon)) for r in rooms]
+    small = min(rooms, key=lambda r: r.area_m2)
+    small_y0 = min(p.y for p in small.polygon)
+    assert small_y0 > 5.0, f"the small room belongs at the top, not at y={small_y0:.2f}"
+    assert sum(1 for lo, _hi in ys if lo > 5.0) == 1
+
+    biggest = max(rooms, key=lambda r: r.area_m2)
+    assert min(p.y for p in biggest.polygon) < 0.5
+
+
+def test_raster_plan_result_does_not_depend_on_upload_resolution():
+    """The same plan uploaded at another size must read as the same building.
+
+    Phone photos and exports differ by an order of magnitude in pixels. Because
+    every threshold is a fraction of the drawing's own span, the wall and room
+    counts must not move with the pixel count — otherwise a user who re-exports
+    their plan gets a different model and no explanation.
+    """
+    small = parse_upload("plan.png", _drawn_plan_png(1.5))
+    large = parse_upload("plan.png", _drawn_plan_png(3.0))
+
+    assert len(small.level0.walls) == len(large.level0.walls) == 6
+    assert len(small.level0.rooms) == len(large.level0.rooms) == 3
+
+    a, b = _bbox(small.level0.walls), _bbox(large.level0.walls)
+    for got, want in zip(a, b):
+        assert abs(got - want) < 0.25, f"footprint moved with resolution: {a} vs {b}"
+
+    areas_small = sorted(r.area_m2 for r in small.level0.rooms)
+    areas_large = sorted(r.area_m2 for r in large.level0.rooms)
+    for got, want in zip(areas_small, areas_large):
+        assert abs(got - want) <= max(1.0, 0.05 * want), \
+            f"room sizes moved with resolution: {areas_small} vs {areas_large}"
+
+
 def test_pdf_scale_is_never_inferred():
     pdf_content = _make_minimal_pdf_with_lines()
     model = parse_upload("plan.pdf", pdf_content)
