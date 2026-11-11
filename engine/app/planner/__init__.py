@@ -52,10 +52,11 @@ class FallbackPlanner:
         system: SystemKind,
         model: Any,
         observations: dict[str, Any] | None,
+        run_id: str | None = None,
     ) -> Strategy:
         candidate = None
         try:
-            candidate = self.api.choose_strategy(system, model, observations)
+            candidate = self.api.choose_strategy(system, model, observations, run_id=run_id)
         except Exception:
             candidate = None
         # Re-validate defensively: an unvalidated value must never reach M2.

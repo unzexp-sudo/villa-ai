@@ -186,6 +186,25 @@ export default function Studio() {
     [startRun, loadGaps],
   );
 
+  const quickDraw = useCallback(async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      const created = await api.quickdraw({ width_m: 10, depth_m: 8, building_type: "villa", country: "ID" });
+      setModel(created.model);
+      const g = await loadGaps(created.model);
+      if (g.items.length) {
+        setStage("confirm");
+      } else {
+        await startRun(created.model);
+      }
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }, [startRun, loadGaps]);
+
   const enabled: SystemKind[] = useMemo(() => {
     if (run) return run.enabled_systems;
     return model?.building_type === "apartment"
@@ -281,6 +300,15 @@ export default function Studio() {
 
             <div className="pick-plans">
               <div className="sample-row">
+                <button
+                  key="quickdraw"
+                  className="sample-card"
+                  disabled={busy}
+                  onClick={() => void quickDraw()}
+                >
+                  <strong>Blank plan · 10 × 8 m</strong>
+                  <span className="muted small">Start from a clean sketch and refine it</span>
+                </button>
                 {[
                   { slug: "villa_120", title: "Villa · 120 m²", note: "3 bed, 2 bath, wet core" },
                   { slug: "apartment_85", title: "Apartment · 85 m²", note: "2 bed, sprinklers on" },

@@ -202,7 +202,12 @@ class SpecialistAgent:
 
             planner = get_planner()
             observations = self._observations(work, country)
-            strategy = planner.choose_strategy(self.system, work, observations)
+            strategy = planner.choose_strategy(
+                self.system,
+                work,
+                observations,
+                run_id=getattr(ctx, "run_id", None),
+            )
             if strategy is None:  # defensive: no strategy, no run
                 raise RuntimeError("planner returned no strategy")
 

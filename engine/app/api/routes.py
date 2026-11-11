@@ -237,6 +237,38 @@ def scene(model_id: str):
                             detail=f"3D scene unavailable: {exc}") from exc
 
 
+@router.post("/models/quickdraw")
+def create_quickdraw_model(payload: dict | None = None):
+    """Create a blank, valid floor plan for a sketch-based start.
+
+    This mirrors the Floorcraft-style "start from a blank page" flow without
+    inventing a full furniture generator. It creates a one-room rectangular
+    model that is ready for the gap auditor, the 3D interior view, and the
+    normal MEP workflow.
+    """
+    from app.contract.enums import BuildingType, Country
+    from app.intake.quickdraw import blank_model
+
+    body = payload or {}
+    width_m = float(body.get("width_m", 10.0))
+    depth_m = float(body.get("depth_m", 8.0))
+    building_type = body.get("building_type", "villa")
+    country = body.get("country", "ID")
+
+    try:
+        model = blank_model(
+            width_m=width_m,
+            depth_m=depth_m,
+            building_type=BuildingType(building_type),
+            country=Country(country),
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    _store().save_model(model)
+    return {"model_id": model.id, "model": model.model_dump(mode="json")}
+
+
 # ---- runs ---------------------------------------------------------------
 @router.post("/runs")
 def create_run(body: RunIn, request: Request):

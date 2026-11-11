@@ -98,6 +98,7 @@ class DeterministicPlanner:
         system: SystemKind,
         model: BuildingModel,
         observations: dict[str, Any] | None,
+        run_id: str | None = None,
     ) -> Strategy:
         obs = dict(observations or {})
         clustered = bool(obs.get("wet_clustered", _wet_clustered(model)))

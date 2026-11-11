@@ -29,6 +29,10 @@ dev = ["pytest>=8", "ruff>=0.4"]
 testpaths = ["tests"]
 addopts = "-q"
 
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]
+
 [build-system]
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"

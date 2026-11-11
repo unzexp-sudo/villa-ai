@@ -87,9 +87,15 @@ export const api = {
   sample: (slug: string) => req<BuildingModel>(`/api/samples/${slug}`),
 
   createModel: (payload: BuildingModel) =>
-    req<{ model_id: string; model: BuildingModel }>("/api/models", {
+    req<{ model_id: string; model: BuildingModel }> ("/api/models", {
       method: "POST",
       body: JSON.stringify(payload),
+    }),
+
+  quickdraw: (body?: { width_m?: number; depth_m?: number; building_type?: string; country?: string }) =>
+    req<{ model_id: string; model: BuildingModel }> ("/api/models/quickdraw", {
+      method: "POST",
+      body: JSON.stringify(body ?? {}),
     }),
 
   getModel: (id: string) => req<BuildingModel>(`/api/models/${id}`),

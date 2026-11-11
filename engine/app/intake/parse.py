@@ -88,7 +88,16 @@ _FIXTURE_HINTS = {
     "DRAIN": FixtureKind.FLOOR_DRAIN,
 }
 
-_RAW_EXT = (".pdf", ".png", ".jpg", ".jpeg", ".webp", ".tif", ".tiff", ".dwg")
+_FIXTURE_UNITS: dict[FixtureKind, float] = {
+    FixtureKind.WC: 3.0,
+    FixtureKind.BASIN: 1.5,
+    FixtureKind.SHOWER: 2.0,
+    FixtureKind.BATH: 3.0,
+    FixtureKind.SINK: 1.5,
+    FixtureKind.WASHING_MACHINE: 1.5,
+    FixtureKind.FLOOR_DRAIN: 1.0,
+    FixtureKind.KITCHEN_SINK: 1.5,
+}
 
 # A floor plan has more than a handful of wall lines. Below this the parse is
 # noise, not a plan, and we say so instead of returning an empty model.
@@ -280,6 +289,7 @@ def _build_model_from_segments(walls: list[Wall], name: str,
                                 source: str = "upload",
                                 unit_note: str | None = None,
                                 room_regions: list[list[tuple[int, int]]] | None = None,
+                                image_blob: bytes | None = None,
                                 ) -> BuildingModel:
     """Assemble a BuildingModel from a wall list, normalising the origin.
 
@@ -316,18 +326,46 @@ def _build_model_from_segments(walls: list[Wall], name: str,
             w.end = Point2D(x=w.end.x * factor, y=w.end.y * factor)
 
     rooms: list[Room] = []
+    fixtures: list[Fixture] = []
     if room_regions:
-        for region in room_regions:
+        labels: list[str] | None = None
+        if image_blob:
+            try:
+                from PIL import Image
+                img = Image.open(io.BytesIO(image_blob))
+                labels = _ocr_room_names(img, room_regions)
+            except Exception:
+                labels = None
+
+        for index, region in enumerate(room_regions):
             poly = [Point2D(x=(px - ox) * factor, y=(py - oy) * factor)
                     for px, py in region]
             area = round(_polygon_area(poly), 2)
             if area <= 0:
                 continue
-            rooms.append(Room(id=f"r{len(rooms) + 1}", name="Room", type=RoomType.OTHER,
-                              polygon=poly, area_m2=area))
+            room_name = "Room"
+            room_kind = RoomType.OTHER
+            if labels is not None and index < len(labels):
+                room_name = labels[index]
+                room_kind = _classify(room_name)
+            room = Room(id=f"r{len(rooms) + 1}", name=room_name, type=room_kind,
+                        polygon=poly, area_m2=area,
+                        wet=room_kind in (RoomType.BATHROOM, RoomType.KITCHEN, RoomType.UTILITY))
+            rooms.append(room)
+
+            for fixture_kind, props in _infer_fixtures_for_label(room_name):
+                cx = sum(p.x for p in poly) / len(poly)
+                cy = sum(p.y for p in poly) / len(poly)
+                fixtures.append(Fixture(
+                    id=f"f{len(fixtures) + 1}",
+                    kind=fixture_kind,
+                    at=Point2D(x=cx, y=cy),
+                    room_id=room.id,
+                    props=dict(props),
+                ))
 
     level = Level(id="L0", name="Ground floor", walls=walls, rooms=rooms,
-                  fixtures=[], openings=[])
+                  fixtures=fixtures, openings=[])
     return BuildingModel(
         id="mdl-" + uuid.uuid4().hex[:10],
         name=name,
@@ -505,6 +543,7 @@ def parse_image(blob: bytes, name: str = "plan.png") -> BuildingModel:
         walls, f"{name} (parsed from image)", source="upload",
         unit_note="image pixels converted to metres using an assumed scale",
         room_regions=regions,
+        image_blob=blob,
     )
 
 
@@ -873,6 +912,112 @@ def calibrate_scale(model: BuildingModel, p1: Point2D, p2: Point2D,
                                    "units", source="user"))
     out.updated_at = _now()
     return out
+
+
+def _ocr_room_names(img, room_regions: list[list[tuple[int, int]]]) -> list[str]:
+    """Best-effort OCR for room titles from a plan image.
+
+    OCR is applied to each room crop, not to the whole page, so labels remain
+    attached to their surrounding region rather than being confused with the
+    drawing's other text or dimension annotations.
+    """
+    try:
+        import pytesseract
+    except Exception:
+        return ["Room"] * len(room_regions)
+
+    if not room_regions:
+        return []
+
+    try:
+        from PIL import Image, ImageFilter
+    except Exception:
+        return ["Room"] * len(room_regions)
+
+    def _clean_label(raw: str) -> str:
+        cleaned = re.sub(r"\s+", " ", (raw or "").strip())
+        cleaned = re.sub(r"[^A-Za-z0-9/ &-]", "", cleaned)
+        return cleaned.strip() or "Room"
+
+    labels: list[str] = []
+    width, height = img.size
+    for region in room_regions:
+        xs = [p[0] for p in region]
+        ys = [p[1] for p in region]
+        if not xs or not ys:
+            labels.append("Room")
+            continue
+        x0 = max(0, min(xs) - 8)
+        y0 = max(0, min(ys) - 8)
+        x1 = min(width, max(xs) + 8)
+        y1 = min(height, max(ys) + 8)
+        crop = img.crop((x0, y0, x1, y1))
+        gray = crop.convert("L")
+        bw = gray.point(lambda p: 255 if p > 180 else 0)
+        bw = bw.filter(ImageFilter.MedianFilter())
+        try:
+            text = pytesseract.image_to_string(
+                bw,
+                config="--psm 10 --oem 3",
+            )
+        except Exception:
+            labels.append("Room")
+            continue
+        cleaned = _clean_label(text)
+        labels.append(cleaned)
+
+    return labels
+
+
+def _infer_fixtures_for_label(label: str) -> list[tuple[FixtureKind, dict[str, float]]]:
+    """Infer likely fixture demand implied by a room label.
+
+    This is not guesswork in the sense of inventing arbitrary rooms: the room
+    type itself already says it's a bathroom / utility / kitchen. We convert that
+    architectural meaning into the fixture demand the MEP engine actually needs.
+    """
+    cleaned = (label or "").strip()
+    if not cleaned:
+        return []
+
+    normalized = cleaned.upper()
+    out: list[tuple[FixtureKind, dict[str, float]]] = []
+
+    if "WC" in normalized or "TOILET" in normalized:
+        out.append((FixtureKind.WC, {"fixture_units": _FIXTURE_UNITS[FixtureKind.WC]}))
+    if "BASIN" in normalized or "LAVATORY" in normalized or "SINK" in normalized:
+        out.append((FixtureKind.BASIN, {"fixture_units": _FIXTURE_UNITS[FixtureKind.BASIN]}))
+    if "SHOWER" in normalized:
+        out.append((FixtureKind.SHOWER, {"fixture_units": _FIXTURE_UNITS[FixtureKind.SHOWER]}))
+    if "BATH" in normalized:
+        out.append((FixtureKind.BATH, {"fixture_units": _FIXTURE_UNITS[FixtureKind.BATH]}))
+    if "KITCHEN" in normalized and ("SINK" in normalized or "KITCHEN" in normalized):
+        out.append((FixtureKind.KITCHEN_SINK, {"fixture_units": _FIXTURE_UNITS[FixtureKind.KITCHEN_SINK]}))
+    if "LAUNDRY" in normalized or "WASHING" in normalized:
+        out.append((FixtureKind.WASHING_MACHINE, {"fixture_units": _FIXTURE_UNITS[FixtureKind.WASHING_MACHINE]}))
+    if "DRAIN" in normalized and "FLOOR" in normalized:
+        out.append((FixtureKind.FLOOR_DRAIN, {"fixture_units": _FIXTURE_UNITS[FixtureKind.FLOOR_DRAIN]}))
+
+    room_kind = _classify(cleaned)
+    if not out:
+        if room_kind == RoomType.BATHROOM:
+            out.extend([
+                (FixtureKind.WC, {"fixture_units": _FIXTURE_UNITS[FixtureKind.WC]}),
+                (FixtureKind.BASIN, {"fixture_units": _FIXTURE_UNITS[FixtureKind.BASIN]}),
+            ])
+        elif room_kind == RoomType.KITCHEN:
+            out.append((FixtureKind.KITCHEN_SINK, {"fixture_units": _FIXTURE_UNITS[FixtureKind.KITCHEN_SINK]}))
+        elif room_kind == RoomType.UTILITY:
+            out.append((FixtureKind.WASHING_MACHINE, {"fixture_units": _FIXTURE_UNITS[FixtureKind.WASHING_MACHINE]}))
+
+    deduped: list[tuple[FixtureKind, dict[str, float]]] = []
+    seen: set[FixtureKind] = set()
+    for kind, props in out:
+        if kind in seen:
+            continue
+        seen.add(kind)
+        deduped.append((kind, props))
+    return deduped
 
 
 __all__ = ["ParseError", "UnsupportedFormat", "parse_upload", "parse_dxf",

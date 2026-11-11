@@ -106,6 +106,15 @@ export function Results({ run, model, onAgain }: Props) {
               {run.enabled_systems.length} agents · {run.clashes_before.length} clashes before,{" "}
               {remaining.length} after.
             </p>
+            {(run.metrics.llm_total_tokens ?? 0) > 0 && (
+              <p className="muted small">
+                LLM usage: {fmtNumber(run.metrics.llm_total_tokens)} total tokens
+                {run.metrics.llm_calls ? ` across ${fmtNumber(run.metrics.llm_calls)} calls` : ""}
+                {run.metrics.llm_prompt_tokens != null && run.metrics.llm_completion_tokens != null
+                  ? ` (${fmtNumber(run.metrics.llm_prompt_tokens)} in / ${fmtNumber(run.metrics.llm_completion_tokens)} out)`
+                  : ""}
+              </p>
+            )}
             <p className="disclaimer">
               Preliminary design. Licensed engineer review required before construction.
             </p>
@@ -284,4 +293,9 @@ function Bar({ n, of, color }: { n: number; of: number; color: string }) {
 function fmtSeconds(run: RunResult): string {
   if (!run.finished_at) return "—";
   return `${Math.max(0.1, run.finished_at - run.started_at).toFixed(1)} s`;
+}
+
+function fmtNumber(value: number | undefined | null): string {
+  if (value == null || Number.isNaN(value)) return "0";
+  return Math.round(value).toLocaleString();
 }

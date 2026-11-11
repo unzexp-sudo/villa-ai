@@ -336,3 +336,12 @@ def test_deleting_a_model_takes_its_runs_with_it(client):
     client.delete(f"/api/models/{mid}")
     # The run must not outlive the plan it describes.
     assert client.get(f"/api/runs/{run_id}").status_code == 404
+
+
+def test_quickdraw_endpoint_creates_blank_model(client):
+    res = client.post("/api/models/quickdraw", json={"width_m": 10, "depth_m": 8})
+    assert res.status_code == 200, res.text
+    payload = res.json()
+    assert payload["model"]["source"] == "quickdraw"
+    assert payload["model"]["levels"][0]["rooms"][0]["type"] == "living"
+    assert client.get(f"/api/models/{payload['model_id']}").status_code == 200

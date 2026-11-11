@@ -38,6 +38,8 @@ from app.contract import (
     SystemKind,
 )
 
+from app.planner.api import get_run_llm_usage, clear_run_llm_usage
+
 from .clash import detect_clashes
 from .merge import element_count, merge_layers
 from .performance import run_performance_loop
@@ -356,6 +358,15 @@ def execute_run(run: RunResult, *, emitter=None, store=None) -> RunResult:
             "layers": float(len(resolved_layers)),
             **{f"perf_{k}": float(v) for k, v in perf.items()},
         }
+        llm_usage = get_run_llm_usage(run.run_id)
+        if llm_usage["total_tokens"]:
+            run.metrics.update({
+                "llm_prompt_tokens": float(llm_usage["prompt_tokens"]),
+                "llm_completion_tokens": float(llm_usage["completion_tokens"]),
+                "llm_total_tokens": float(llm_usage["total_tokens"]),
+                "llm_calls": float(llm_usage["calls"]),
+            })
+        clear_run_llm_usage(run.run_id)
         run.status = RunStatus.COMPLETE
         run.finished_at = time.time()
         db.save_run(run)
