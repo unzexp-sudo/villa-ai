@@ -4,6 +4,7 @@ import type { MissingItem } from "../contract";
 interface Props {
   items: MissingItem[];
   busy: boolean;
+  warnings?: string[];
   onAction: (item: MissingItem, action: "place" | "suggest" | "skip", at?: { x: number; y: number }) => void;
   onDone: () => void;
 }
@@ -31,7 +32,7 @@ export function currentDragId(): string | null {
  * from a nested element), so relying on the payload alone leaves the user
  * dragging a card onto the plan and watching nothing happen.
  */
-export function GapCards({ items, busy, onAction, onDone }: Props) {
+export function GapCards({ items, busy, warnings, onAction, onDone }: Props) {
   const [dragging, setDragging] = useState<string | null>(null);
 
   return (
@@ -42,6 +43,17 @@ export function GapCards({ items, busy, onAction, onDone }: Props) {
           <h3>{items.length ? `${items.length} item${items.length === 1 ? "" : "s"} missing` : "Nothing missing"}</h3>
         </div>
       </header>
+
+      {warnings && warnings.length > 0 && (
+        <div className="parse-warnings" role="alert">
+          <p className="eyebrow">Read from your file</p>
+          <ul>
+            {warnings.map((w, i) => (
+              <li key={i}>{w}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {items.length === 0 && (
         <p className="muted small">

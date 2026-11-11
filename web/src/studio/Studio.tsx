@@ -51,6 +51,7 @@ export default function Studio() {
   const [stage, setStage] = useState<Stage>("pick");
   const [model, setModel] = useState<BuildingModel | null>(null);
   const [gaps, setGaps] = useState<MissingItem[]>([]);
+  const [warnings, setWarnings] = useState<string[]>([]);
   const [run, setRun] = useState<RunResult | null>(null);
   const [events, setEvents] = useState<AgentEvent[]>([]);
   const [agents, setAgents] = useState<Record<string, AgentState>>({});
@@ -69,6 +70,20 @@ export default function Studio() {
     if (model) session.setActiveModel(model);
   }, [model]);
 
+  /**
+   * Load the missing-item cards and any parse warnings for a model.
+   *
+   * The warnings come from the server's parse-quality assessment: they say
+   * what could NOT be read from the file (rooms, scale, fixtures) so the user
+   * knows how much to trust the run before starting it.
+   */
+  const loadGaps = useCallback(async (m: BuildingModel) => {
+    const g = await api.gaps(m.id);
+    setGaps(g.items);
+    setWarnings(g.warnings ?? []);
+    return g;
+  }, []);
+
   useEffect(() => {
     api.health().then(() => setEngineUp(true)).catch(() => setEngineUp(false));
     // Restore a previously saved model so switching tabs does not lose work.
@@ -76,8 +91,7 @@ export default function Studio() {
     if (saved) {
       setModel(saved);
       // If we have a saved model, jump straight to confirm stage.
-      void api.gaps(saved.id).then((g) => {
-        setGaps(g.items);
+      void loadGaps(saved).then(() => {
         setStage("confirm");
       }).catch(() => {
         // Model may have been purged server-side; stay on pick.
@@ -87,7 +101,7 @@ export default function Studio() {
     return () => {
       if (streamRef.current) streamRef.current.close();
     };
-  }, []);
+  }, [loadGaps]);
 
   const startRun = useCallback(async (m: BuildingModel) => {
     setBusy(true);
@@ -157,8 +171,7 @@ export default function Studio() {
         const m = await api.sample(slug);
         const created = await api.createModel(m);
         setModel(created.model);
-        const g = await api.gaps(created.model_id);
-        setGaps(g.items);
+        const g = await loadGaps(created.model);
         if (g.items.length) {
           setStage("confirm");
         } else {
@@ -170,7 +183,7 @@ export default function Studio() {
         setBusy(false);
       }
     },
-    [startRun],
+    [startRun, loadGaps],
   );
 
   const enabled: SystemKind[] = useMemo(() => {
@@ -293,8 +306,7 @@ export default function Studio() {
                 </p>
                 <UploadBox onUploaded={(m) => {
                   setModel(m);
-                  void api.gaps(m.id).then((g) => {
-                    setGaps(g.items);
+                  void loadGaps(m).then(() => {
                     setStage("confirm");
                   });
                 }} />
@@ -319,7 +331,7 @@ export default function Studio() {
           </header>
           <div className="confirm-grid">
             <PlanCanvas model={model} layers={{}} showLabels onDropAt={dropGap} />
-            <GapCards items={gaps} busy={busy} onAction={placeGap} onDone={() => void startRun(model)} />
+            <GapCards items={gaps} busy={busy} warnings={warnings} onAction={placeGap} onDone={() => void startRun(model)} />
           </div>
         </section>
       )}
@@ -396,8 +408,7 @@ export default function Studio() {
           run={run}
           model={model}
           onAgain={() => {
-            void api.gaps(model.id).then((g) => {
-              setGaps(g.items);
+            void loadGaps(model).then(() => {
               setStage("confirm");
             });
           }}

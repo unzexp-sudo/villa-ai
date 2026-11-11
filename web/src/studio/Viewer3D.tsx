@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { Canvas } from "@react-three/fiber";
+import { useMemo, useRef, useState } from "react";
+import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import type { BuildingModel, Layer, Point3D, Segment, SystemKind } from "../contract";
@@ -34,6 +34,9 @@ export function Viewer3D({ model, layers, clash }: Props) {
   const [showShell, setShowShell] = useState(true);
   const [dimensionScale, setDimensionScale] = useState<1 | 6>(6);
   const [selectedSegment, setSelectedSegment] = useState<Segment | null>(null);
+  // Camera commands are issued from the legend card, which lives outside the
+  // <Canvas>. The ref is filled in by <CameraRig /> once the scene is mounted.
+  const cameraCmd = useRef<((cmd: "in" | "out" | "reset") => void) | null>(null);
   const centre = useMemo(() => {
     const [minx, miny, maxx, maxy] = modelBBox(model);
     if (maxx > minx && maxy > miny) {
@@ -41,6 +44,17 @@ export function Viewer3D({ model, layers, clash }: Props) {
     }
     return { x: 5, y: 4, r: 10 };
   }, [model]);
+
+  // The orbit limit is derived from the model, not fixed. A hard 200 m cap
+  // traps the camera inside any model bigger than that, and the symptom is a
+  // viewer that refuses to zoom out no matter how far you pull.
+  const orbit = useMemo(() => {
+    const r = Math.max(centre.r, 1);
+    return {
+      min: Math.max(0.5, r * 0.02),
+      max: Math.max(50, r * 12),
+    };
+  }, [centre.r]);
 
   return (
     <div className="viewer3d">
@@ -50,8 +64,10 @@ export function Viewer3D({ model, layers, clash }: Props) {
           // camera orbits that point rather than a plan coordinate.
           position: [centre.r * 0.75, centre.r * 0.85, centre.r * 0.95],
           fov: 42,
-          near: 0.05,
-          far: 5000,
+          // The near/far planes scale with the model. Fixed planes either clip
+          // a large model away or z-fight a small one.
+          near: Math.max(0.05, centre.r / 2000),
+          far: Math.max(500, centre.r * 60),
         }}
         style={{ background: "#a8c8d8" }}
         dpr={[1, 1.6]}
@@ -77,13 +93,11 @@ export function Viewer3D({ model, layers, clash }: Props) {
           })}
         </group>
 
-        <OrbitControls
-          makeDefault
+        <CameraControls
           target={[0, 1.2, 0]}
-          enablePan
-          minDistance={0.5}
-          maxDistance={200}
-          maxPolarAngle={Math.PI / 2.05}
+          minDistance={orbit.min}
+          maxDistance={orbit.max}
+          cmdRef={cameraCmd}
         />
       </Canvas>
 
@@ -108,6 +122,35 @@ export function Viewer3D({ model, layers, clash }: Props) {
             <em className="muted small">Agent {SYSTEM_ORDER.indexOf(s) + 1}</em>
           </label>
         ))}
+        <hr className="divider" />
+        <div className="v3d-zoom" role="group" aria-label="Camera zoom">
+          <button
+            type="button"
+            className="btn btn-icon"
+            onClick={() => cameraCmd.current?.("in")}
+            aria-label="Zoom in"
+            title="Zoom in"
+          >
+            +
+          </button>
+          <button
+            type="button"
+            className="btn btn-icon"
+            onClick={() => cameraCmd.current?.("out")}
+            aria-label="Zoom out"
+            title="Zoom out"
+          >
+            &minus;
+          </button>
+          <button
+            type="button"
+            className="btn"
+            onClick={() => cameraCmd.current?.("reset")}
+          >
+            Reset view
+          </button>
+        </div>
+        <p className="muted x-small">Scroll to zoom · drag to orbit</p>
         <hr className="divider" />
         <button
           type="button"
@@ -174,6 +217,81 @@ export function Viewer3D({ model, layers, clash }: Props) {
         </p>
       </div>
     </div>
+  );
+}
+
+/**
+ * Orbit controls bound to the REAL canvas element.
+ *
+ * drei's `OrbitControls` picks its element as `events.connected || gl.domElement`.
+ * Under R3F 8, `events.connected` is R3F's own internal event container — a
+ * sibling div of the canvas, not the canvas and not an ancestor of it. Wheel
+ * and drag events land on the canvas and bubble to `.viewer3d`; they never
+ * reach that sibling, so the controls never see them and the viewer appears
+ * frozen. Passing `domElement={gl.domElement}` binds the controls to the
+ * element the user is actually pointing at.
+ *
+ * The buttons in the legend card drive the same camera through `cmdRef`, so
+ * the view is reachable even where a wheel gesture is not available.
+ */
+function CameraControls({
+  target,
+  minDistance,
+  maxDistance,
+  cmdRef,
+}: {
+  target: [number, number, number];
+  minDistance: number;
+  maxDistance: number;
+  cmdRef: React.MutableRefObject<((cmd: "in" | "out" | "reset") => void) | null>;
+}) {
+  const gl = useThree((s) => s.gl);
+  const camera = useThree((s) => s.camera);
+  const controls = useThree((s) => s.controls);
+  const home = useMemo<[number, number, number]>(
+    () => [camera.position.x, camera.position.y, camera.position.z],
+    // Captured once on mount: this is the framing the viewer opens with.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+
+  useMemo(() => {
+    if (!controls) return;
+    cmdRef.current = (cmd) => {
+      const c = controls as unknown as {
+        target: THREE.Vector3;
+        object: THREE.PerspectiveCamera;
+        update: () => void;
+        minDistance: number;
+        maxDistance: number;
+      };
+      const t = c.target;
+      const offset = c.object.position.clone().sub(t);
+      const dist = offset.length();
+      let next = dist;
+      if (cmd === "in") next = dist * 0.8;
+      else if (cmd === "out") next = dist * 1.25;
+      else next = new THREE.Vector3(...home).distanceTo(t);
+      const clamped = Math.min(c.maxDistance, Math.max(c.minDistance, next));
+      offset.setLength(clamped);
+      c.object.position.copy(t).add(offset);
+      c.object.updateProjectionMatrix();
+      c.update();
+    };
+  }, [controls, cmdRef, home]);
+
+  return (
+    <OrbitControls
+      makeDefault
+      domElement={gl.domElement}
+      target={target}
+      enablePan
+      enableZoom
+      zoomSpeed={1.2}
+      minDistance={minDistance}
+      maxDistance={maxDistance}
+      maxPolarAngle={Math.PI / 2.05}
+    />
   );
 }
 

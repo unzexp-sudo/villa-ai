@@ -103,7 +103,7 @@ export const api = {
   deleteModel: (id: string) =>
     req<void>(`/api/models/${id}`, { method: "DELETE" }),
 
-  gaps: (id: string) => req<{ items: MissingItem[] }>(`/api/models/${id}/gaps`),
+  gaps: (id: string) => req<{ items: MissingItem[]; warnings?: string[] }>(`/api/models/${id}/gaps`),
 
   addItem: (
     id: string,

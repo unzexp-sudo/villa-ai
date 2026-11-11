@@ -122,7 +122,10 @@ def test_upload_accepts_a_real_dxf(client):
 
     doc = ezdxf.new("R2013")
     msp = doc.modelspace()
-    for a, b in [((0, 0), (9, 0)), ((9, 0), (9, 7)), ((9, 7), (0, 7)), ((0, 7), (0, 0))]:
+    # Exterior walls + internal partitions so the quality gate (>= 8 walls) passes.
+    for a, b in [((0, 0), (9, 0)), ((9, 0), (9, 7)), ((9, 7), (0, 7)), ((0, 7), (0, 0)),
+                 ((4.5, 0), (4.5, 7)), ((0, 3.5), (9, 3.5)),
+                 ((4.5, 1.5), (9, 1.5)), ((4.5, 5), (9, 5))]:
         msp.add_line(a, b)
     buf = io.StringIO()
     doc.write(buf)
@@ -132,7 +135,7 @@ def test_upload_accepts_a_real_dxf(client):
     res = client.post(f"/api/models/{mid}/upload",
                       files={"file": ("plan.dxf", buf.getvalue().encode(), "application/dxf")})
     assert res.status_code == 200, res.text
-    assert len(res.json()["levels"][0]["walls"]) == 4
+    assert len(res.json()["levels"][0]["walls"]) >= 8
 
 
 def test_upload_create_saves_a_new_model_from_dxf(client):
@@ -142,7 +145,10 @@ def test_upload_create_saves_a_new_model_from_dxf(client):
 
     doc = ezdxf.new("R2013")
     msp = doc.modelspace()
-    for a, b in [((0, 0), (8, 0)), ((8, 0), (8, 6)), ((8, 6), (0, 6)), ((0, 6), (0, 0))]:
+    # Exterior walls + internal partitions so the quality gate (>= 8 walls) passes.
+    for a, b in [((0, 0), (8, 0)), ((8, 0), (8, 6)), ((8, 6), (0, 6)), ((0, 6), (0, 0)),
+                 ((4, 0), (4, 6)), ((0, 3), (8, 3)),
+                 ((4, 1.5), (8, 1.5)), ((4, 4.5), (8, 4.5))]:
         msp.add_line(a, b)
     buf = io.StringIO()
     doc.write(buf)
@@ -152,7 +158,7 @@ def test_upload_create_saves_a_new_model_from_dxf(client):
     assert res.status_code == 200, res.text
     uploaded = res.json()
     assert uploaded["id"].startswith("mdl-")
-    assert len(uploaded["levels"][0]["walls"]) == 4
+    assert len(uploaded["levels"][0]["walls"]) >= 8
     assert client.get(f"/api/models/{uploaded['id']}").json()["id"] == uploaded["id"]
 
 

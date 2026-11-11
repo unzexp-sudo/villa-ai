@@ -366,7 +366,7 @@ function SceneRig({
 }) {
   // `any` is unavoidable for a drei OrbitControls instance ref.
   const controlsRef = useRef<any>(null);
-  const { camera } = useThree();
+  const { camera, gl } = useThree();
 
   // Reset camera + controls target whenever mode / roomId / scene changes.
   useEffect(() => {
@@ -385,8 +385,14 @@ function SceneRig({
       <OrbitControls
         ref={controlsRef}
         makeDefault
+        // Bind to the real canvas. drei otherwise binds to R3F's internal
+        // event container, which is a sibling of the canvas — wheel and drag
+        // events land on the canvas and never reach it, so the viewer feels
+        // frozen. See web/src/studio/Viewer3D.tsx for the same fix.
+        domElement={gl.domElement}
         enableDamping
         dampingFactor={0.08}
+        enableZoom
         enablePan={mode !== "walk"}
         minPolarAngle={mode === "walk" ? Math.PI / 2 : 0}
         maxPolarAngle={mode === "walk" ? Math.PI / 2 : Math.PI}

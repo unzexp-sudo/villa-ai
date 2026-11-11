@@ -160,12 +160,18 @@ async def upload_create(file: UploadFile = File(...)):
     exists and the user is replacing its geometry.
     """
     from app.intake.parse import ParseError, parse_upload
+    from app.intake.quality import assess
 
     blob = await _read_plan_upload(file)
     try:
         parsed = parse_upload(file.filename or "", blob)
     except ParseError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    verdict = assess(parsed)
+    if not verdict.usable:
+        raise HTTPException(status_code=422, detail=verdict.reject_reason)
+
     _store().save_model(parsed)
     return parsed
 
@@ -174,12 +180,18 @@ async def upload_create(file: UploadFile = File(...)):
 async def upload(model_id: str, file: UploadFile = File(...)):
     """Parse an upload into the existing model's id, keeping the same handle."""
     from app.intake.parse import ParseError, parse_upload
+    from app.intake.quality import assess
 
     blob = await _read_plan_upload(file)
     try:
         parsed = parse_upload(file.filename or "", blob)
     except ParseError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    verdict = assess(parsed)
+    if not verdict.usable:
+        raise HTTPException(status_code=422, detail=verdict.reject_reason)
+
     parsed.id = model_id
     _store().save_model(parsed)
     return parsed
@@ -188,8 +200,15 @@ async def upload(model_id: str, file: UploadFile = File(...)):
 @router.get("/models/{model_id}/gaps")
 def gaps(model_id: str):
     from app.intake import audit
+    from app.intake.quality import assess
 
-    return {"items": [i.model_dump(mode="json") for i in audit(_get_model(model_id))]}
+    model = _get_model(model_id)
+    verdict = assess(model)
+    return {"items": [i.model_dump(mode="json") for i in audit(model)],
+            # Parse weaknesses that are not "missing items" but the user
+            # still needs to see before trusting the run. Additive: the
+            # MissingItem contract is unchanged.
+            "warnings": verdict.warnings}
 
 
 @router.post("/models/{model_id}/items")
