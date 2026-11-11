@@ -97,6 +97,23 @@ class Shaft(_Nested):
     systems: list[SystemKind] = Field(default_factory=list)
 
 
+class Roof(_Nested):
+    """Roof shell / cap above the highest occupied floor.
+
+    The roof is modeled as a semantic cap, not a living floor. This lets us
+    attach parapets, pitch, and slab thickness without pretending the roof is a
+    normal occupied level.
+    """
+
+    id: str
+    kind: Literal["flat", "pitched", "gable", "skillion"] = "flat"
+    elevation: float = 0.0
+    thickness: float = 0.15
+    pitch_deg: float = 0.0
+    parapet_height: float = 0.0
+    overhang_m: float = 0.0
+
+
 class Level(_Nested):
     id: str
     name: str
@@ -116,6 +133,10 @@ class Level(_Nested):
         if len(self.rooms) < 1 and len(self.walls) < 1:
             raise ValueError("Level needs >= 1 room OR >= 1 wall")
         return self
+
+    @property
+    def top_elevation(self) -> float:
+        return self.elevation + self.floor_to_floor
 
 
 class Scale(_Nested):
@@ -161,6 +182,7 @@ class BuildingModel(BaseModel):
     storeys: int = 1
     ceiling_height: float = 2.7
     levels: list[Level]
+    roof: Roof | None = None
     scale: Scale | None = None
     site: SiteConnections = Field(default_factory=SiteConnections)
     assumptions: list[Assumption] = Field(default_factory=list)
@@ -181,6 +203,40 @@ class BuildingModel(BaseModel):
     def level0(self) -> Level:
         """First (and in v1 only) level."""
         return self.levels[0]
+
+    @property
+    def roof_elevation(self) -> float:
+        """Topmost roof elevation if present, otherwise highest occupied floor."""
+        highest = max((lvl.elevation + lvl.floor_to_floor for lvl in self.levels), default=0.0)
+        if self.roof is not None:
+            return max(highest, self.roof.elevation)
+        return highest
+
+    def stack_levels(self, *, default_floor_to_floor: float = 3.0) -> "BuildingModel":
+        """Assign consistent z elevations to the level stack.
+
+        This keeps all floors aligned in a single world model even when the
+        input is a stack of page-based drawings. The first level sits at z=0.0,
+        and every subsequent level rises by that level's floor-to-floor height.
+        The roof, if present, caps the topmost level.
+        """
+        out = self.model_copy(deep=True)
+        if not out.levels:
+            return out
+
+        current = 0.0
+        for level in out.levels:
+            level.elevation = round(current, 6)
+            if level.floor_to_floor <= 0:
+                level.floor_to_floor = float(default_floor_to_floor)
+            current += level.floor_to_floor
+
+        out.storeys = len(out.levels)
+        if out.roof is not None:
+            highest_level = max((lvl.top_elevation for lvl in out.levels), default=0.0)
+            out.roof.elevation = round(max(highest_level, out.roof.elevation), 6)
+        out.updated_at = float(__import__("time").time())
+        return out
 
     def wet_rooms(self) -> list[Room]:
         """All rooms flagged wet across every level."""
@@ -233,6 +289,6 @@ class BuildingModel(BaseModel):
 
 __all__ = [
     "Point2D", "Point3D", "Size3D", "Wall", "Opening", "Room", "Fixture",
-    "Equipment", "Shaft", "Level", "Scale", "SiteConnections", "Assumption",
+    "Equipment", "Shaft", "Roof", "Level", "Scale", "SiteConnections", "Assumption",
     "BuildingModel",
 ]

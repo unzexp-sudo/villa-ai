@@ -279,3 +279,25 @@ def test_api_health_and_config():
     assert body["product_name"] == "Villa AI"
     assert body["systems"] == ["drainage", "water", "air", "power", "fire"]
     assert len(body["systems"]) == 5
+
+
+def test_level_stacking_and_roof_cap():
+    model = BuildingModel(
+        id="m-stack",
+        name="stacked model",
+        created_at=1.0,
+        updated_at=1.0,
+        levels=[
+            Level(id="L0", name="Ground", rooms=[Room(id="r0", name="Main", type="living", polygon=[{"x":0,"y":0},{"x":2,"y":0},{"x":2,"y":2},{"x":0,"y":2}])]),
+            Level(id="L1", name="First", floor_to_floor=3.2, rooms=[Room(id="r1", name="Upper", type="bedroom", polygon=[{"x":0,"y":0},{"x":2,"y":0},{"x":2,"y":2},{"x":0,"y":2}])]),
+            Level(id="L2", name="Second", floor_to_floor=3.1, rooms=[Room(id="r2", name="Top", type="bedroom", polygon=[{"x":0,"y":0},{"x":2,"y":0},{"x":2,"y":2},{"x":0,"y":2}])]),
+        ],
+        roof={"id": "roof-1", "kind": "flat", "thickness": 0.18, "elevation": 9.0},
+    )
+
+    stacked = model.stack_levels()
+    assert [lvl.elevation for lvl in stacked.levels] == [0.0, 3.0, 6.2]
+    assert stacked.roof is not None
+    assert stacked.roof.elevation >= stacked.levels[-1].top_elevation
+    assert stacked.storeys == 3
+    assert stacked.roof_elevation >= 9.18

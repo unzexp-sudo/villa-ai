@@ -34,6 +34,7 @@ from .building import (
     Point2D,
     Point3D,
     Room,
+    Roof,
     Scale,
     Shaft,
     SiteConnections,
@@ -60,7 +61,7 @@ __all__ = [
     "CLASH_COLOR", "RESOLVER_COLOR",
     # building
     "Point2D", "Point3D", "Size3D", "Wall", "Opening", "Room", "Fixture",
-    "Equipment", "Shaft", "Level", "Scale", "SiteConnections", "Assumption",
+    "Equipment", "Shaft", "Roof", "Level", "Scale", "SiteConnections", "Assumption",
     "BuildingModel",
     # layers
     "Segment", "Device", "Layer",

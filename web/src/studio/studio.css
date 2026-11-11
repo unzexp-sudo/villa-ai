@@ -668,3 +668,38 @@
   text-transform: uppercase;
 }
 .assume td { padding: 7px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+
+.quickdraw-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.quickdraw-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.quickdraw-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.quickdraw-field input,
+.quickdraw-field select {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+
+.quickdraw-card .btn-primary {
+  margin-top: 2px;
+}
