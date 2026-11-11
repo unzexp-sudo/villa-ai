@@ -8,6 +8,7 @@
 import { useEffect, useState } from "react";
 import { API_BASE, PRODUCT_NAME, SYSTEM_COLORS, SYSTEM_LABELS, SYSTEM_ORDER } from "../contract";
 import { api } from "../lib/api";
+import { session } from "../lib/session";
 import { DemoRun } from "../demo/DemoRun";
 import "./landing.css";
 
@@ -30,6 +31,11 @@ export default function Landing() {
     };
   }, []);
 
+  const resetSession = () => {
+    session.resetSession();
+    window.location.assign("/app");
+  };
+
   return (
     <main className="landing">
       <section className="hero">
@@ -49,6 +55,9 @@ export default function Landing() {
           <a className="btn-primary big" href="/app">
             Design a plan
           </a>
+          <button type="button" className="btn ghost" onClick={resetSession}>
+            Start fresh
+          </button>
           <a className="btn ghost" href="/interior">
             See the 3D walkthrough
           </a>

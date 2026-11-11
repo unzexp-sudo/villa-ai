@@ -301,10 +301,13 @@ export default function Studio() {
             <div className="pick-plans">
               <div className="sample-row">
                 <button
-                  key="quickdraw"
+                  type="button"
                   className="sample-card"
                   disabled={busy}
-                  onClick={() => void quickDraw()}
+                  onClick={() => {
+                    session.resetSession();
+                    void quickDraw();
+                  }}
                 >
                   <strong>Blank plan · 10 × 8 m</strong>
                   <span className="muted small">Start from a clean sketch and refine it</span>
@@ -316,9 +319,13 @@ export default function Studio() {
                 ].map((s) => (
                   <button
                     key={s.slug}
+                    type="button"
                     className="sample-card"
                     disabled={busy}
-                    onClick={() => void sample(s.slug)}
+                    onClick={() => {
+                      session.resetSession();
+                      void sample(s.slug);
+                    }}
                   >
                     <strong>{s.title}</strong>
                     <span className="muted small">{s.note}</span>
@@ -332,7 +339,21 @@ export default function Studio() {
                   DXF gives exact geometry. PDF and PNG/JPG are vectorised or edge-detected.
                   DWG needs to be converted to DXF first.
                 </p>
+                <div className="row" style={{ gap: 8, justifyContent: "space-between" }}>
+                  <button
+                    type="button"
+                    className="btn ghost small"
+                    onClick={() => {
+                      session.resetSession();
+                      setModel(null);
+                      setStage("pick");
+                    }}
+                  >
+                    Reset session
+                  </button>
+                </div>
                 <UploadBox onUploaded={(m) => {
+                  session.resetSession();
                   setModel(m);
                   void loadGaps(m).then(() => {
                     setStage("confirm");

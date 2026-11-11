@@ -51,12 +51,17 @@ export const session = {
     }
   },
 
-  /** Clear the active model (e.g. when the user starts fresh). */
+  /** Clear the saved model so the next visit starts from a fresh plan selection. */
   clearActiveModel(): void {
     try {
       localStorage.removeItem(KEY);
     } catch {
       /* private mode — non-fatal */
     }
+  },
+
+  /** Explicitly reset the session and force a fresh start. */
+  resetSession(): void {
+    this.clearActiveModel();
   },
 };
